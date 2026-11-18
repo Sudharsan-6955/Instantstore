@@ -203,7 +203,7 @@ export const api = {
       }
     }
 
-    // 2. Fallback to Backend Cloudinary upload (uses server/.env credentials)
+    // Fallback: Backend upload proxy
     try {
       const formData = new FormData();
       formData.append('image', file);
@@ -219,10 +219,10 @@ export const api = {
         throw new Error(data.message);
       }
     } catch (err) {
-      console.error('Backend Cloudinary upload failed:', err);
-      throw new Error(err.message || 'Image upload failed. Please check Cloudinary configuration.');
+      console.error('Backend upload failed:', err);
+      throw new Error(err.message || 'Image upload failed.');
     }
 
-    throw new Error('Please configure Cloudinary credentials in .env');
+    throw new Error('Image upload failed. Please verify configuration.');
   }
 };

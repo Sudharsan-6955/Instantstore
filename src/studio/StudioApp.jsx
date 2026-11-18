@@ -59,6 +59,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
     updateDraftBrand, 
     updateDraftPages, 
     updateDraftNavigation,
+    updateDraftContact,
     saveDraftToCloud, 
     addProduct, 
     loadStore,
@@ -992,11 +993,20 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Headline</label>
                         <input
                           type="text"
-                          defaultValue={tenant.pages?.find(p => p.slug === 'home')?.sections?.[0]?.title || tenant.name}
+                          value={tenant.pages?.find(p => p.slug === 'home')?.sections?.[0]?.title ?? tenant.name}
                           onChange={(e) => {
                             const pages = [...(tenant.pages || [])];
-                            const home = pages.find(p => p.slug === 'home');
-                            if (home && home.sections?.[0]) home.sections[0].title = e.target.value;
+                            let home = pages.find(p => p.slug === 'home');
+                            if (!home) {
+                              home = { slug: 'home', title: 'Home', sections: [{ type: 'hero', title: e.target.value }] };
+                              pages.push(home);
+                            } else {
+                              if (!home.sections || home.sections.length === 0) {
+                                home.sections = [{ type: 'hero', title: e.target.value }];
+                              } else {
+                                home.sections[0].title = e.target.value;
+                              }
+                            }
                             updateDraftPages(pages);
                           }}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
@@ -1007,11 +1017,20 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Hero Subtitle</label>
                         <textarea
                           rows={2}
-                          defaultValue={tenant.pages?.find(p => p.slug === 'home')?.sections?.[0]?.subtitle || tenant.tagline}
+                          value={tenant.pages?.find(p => p.slug === 'home')?.sections?.[0]?.subtitle ?? tenant.tagline}
                           onChange={(e) => {
                             const pages = [...(tenant.pages || [])];
-                            const home = pages.find(p => p.slug === 'home');
-                            if (home && home.sections?.[0]) home.sections[0].subtitle = e.target.value;
+                            let home = pages.find(p => p.slug === 'home');
+                            if (!home) {
+                              home = { slug: 'home', title: 'Home', sections: [{ type: 'hero', title: tenant.name, subtitle: e.target.value }] };
+                              pages.push(home);
+                            } else {
+                              if (!home.sections || home.sections.length === 0) {
+                                home.sections = [{ type: 'hero', title: tenant.name, subtitle: e.target.value }];
+                              } else {
+                                home.sections[0].subtitle = e.target.value;
+                              }
+                            }
                             updateDraftPages(pages);
                           }}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
@@ -1025,7 +1044,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         onUploadSuccess={(url) => {
                           updateDraftBrand({ heroImage: url });
                           const pages = [...(tenant.pages || [])];
-                          const home = pages.find(p => p.slug === 'home');
+                          let home = pages.find(p => p.slug === 'home');
                           if (home && home.sections?.[0]) home.sections[0].imageUrl = url;
                           updateDraftPages(pages);
                         }}
@@ -1042,11 +1061,20 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Brand Story Headline</label>
                         <input
                           type="text"
-                          defaultValue={tenant.pages?.find(p => p.slug === 'about')?.sections?.[0]?.title || `The Story of ${tenant.name}`}
+                          value={tenant.pages?.find(p => p.slug === 'about')?.sections?.[0]?.title ?? `The Story of ${tenant.name}`}
                           onChange={(e) => {
                             const pages = [...(tenant.pages || [])];
-                            const about = pages.find(p => p.slug === 'about');
-                            if (about && about.sections?.[0]) about.sections[0].title = e.target.value;
+                            let about = pages.find(p => p.slug === 'about');
+                            if (!about) {
+                              about = { slug: 'about', title: 'About Us', sections: [{ type: 'story', title: e.target.value }] };
+                              pages.push(about);
+                            } else {
+                              if (!about.sections || about.sections.length === 0) {
+                                about.sections = [{ type: 'story', title: e.target.value }];
+                              } else {
+                                about.sections[0].title = e.target.value;
+                              }
+                            }
                             updateDraftPages(pages);
                           }}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
@@ -1057,11 +1085,20 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Brand Story Paragraph</label>
                         <textarea
                           rows={4}
-                          defaultValue={tenant.pages?.find(p => p.slug === 'about')?.sections?.[0]?.content || 'Our mission is to create exceptional goods...'}
+                          value={tenant.pages?.find(p => p.slug === 'about')?.sections?.[0]?.content ?? 'Our mission is to create exceptional goods...'}
                           onChange={(e) => {
                             const pages = [...(tenant.pages || [])];
-                            const about = pages.find(p => p.slug === 'about');
-                            if (about && about.sections?.[0]) about.sections[0].content = e.target.value;
+                            let about = pages.find(p => p.slug === 'about');
+                            if (!about) {
+                              about = { slug: 'about', title: 'About Us', sections: [{ type: 'story', title: `The Story of ${tenant.name}`, content: e.target.value }] };
+                              pages.push(about);
+                            } else {
+                              if (!about.sections || about.sections.length === 0) {
+                                about.sections = [{ type: 'story', title: `The Story of ${tenant.name}`, content: e.target.value }];
+                              } else {
+                                about.sections[0].content = e.target.value;
+                              }
+                            }
                             updateDraftPages(pages);
                           }}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
@@ -1074,7 +1111,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         currentValue={tenant.pages?.find(p => p.slug === 'about')?.sections?.[0]?.imageUrl || ''}
                         onUploadSuccess={(url) => {
                           const pages = [...(tenant.pages || [])];
-                          const about = pages.find(p => p.slug === 'about');
+                          let about = pages.find(p => p.slug === 'about');
                           if (about && about.sections?.[0]) about.sections[0].imageUrl = url;
                           updateDraftPages(pages);
                         }}
@@ -1087,23 +1124,83 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                   {/* 3. CONTACT PAGE CONTENT EDITOR */}
                   {editingPageSlug === 'contact' && (
                     <div className="p-3.5 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Contact Page Headline</label>
+                        <input
+                          type="text"
+                          value={tenant.pages?.find(p => p.slug === 'contact')?.sections?.[0]?.title ?? 'Get in Touch'}
+                          onChange={(e) => {
+                            const pages = [...(tenant.pages || [])];
+                            let contactPage = pages.find(p => p.slug === 'contact');
+                            if (!contactPage) {
+                              contactPage = { 
+                                slug: 'contact', 
+                                title: 'Contact Us', 
+                                sections: [{ type: 'contact_form', title: e.target.value, subtitle: "Have questions about our products or custom requests? We'd love to help." }] 
+                              };
+                              pages.push(contactPage);
+                            } else {
+                              if (!contactPage.sections || contactPage.sections.length === 0) {
+                                contactPage.sections = [{ type: 'contact_form', title: e.target.value, subtitle: "Have questions about our products or custom requests? We'd love to help." }];
+                              } else {
+                                contactPage.sections[0].title = e.target.value;
+                              }
+                            }
+                            updateDraftPages(pages);
+                          }}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          placeholder="e.g. Get in Touch"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 mb-1">Subtitle / Help Text</label>
+                        <textarea
+                          rows={2}
+                          value={tenant.pages?.find(p => p.slug === 'contact')?.sections?.[0]?.subtitle ?? `Have questions about ${tenant.name}'s products, orders, or custom requests? We're here to help.`}
+                          onChange={(e) => {
+                            const pages = [...(tenant.pages || [])];
+                            let contactPage = pages.find(p => p.slug === 'contact');
+                            if (!contactPage) {
+                              contactPage = { 
+                                slug: 'contact', 
+                                title: 'Contact Us', 
+                                sections: [{ type: 'contact_form', title: 'Get in Touch', subtitle: e.target.value }] 
+                              };
+                              pages.push(contactPage);
+                            } else {
+                              if (!contactPage.sections || contactPage.sections.length === 0) {
+                                contactPage.sections = [{ type: 'contact_form', title: 'Get in Touch', subtitle: e.target.value }];
+                              } else {
+                                contactPage.sections[0].subtitle = e.target.value;
+                              }
+                            }
+                            updateDraftPages(pages);
+                          }}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          placeholder="e.g. Have questions? We're here to help."
+                        />
+                      </div>
+
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-slate-400 mb-1">Support Email</label>
                           <input
                             type="text"
-                            defaultValue={tenant.contact?.email || ''}
-                            onChange={(e) => updateDraftTheme({ contact: { ...(tenant.contact || {}), email: e.target.value } })}
+                            value={tenant.contact?.email ?? ''}
+                            onChange={(e) => updateDraftContact({ email: e.target.value })}
                             className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-[11px]"
+                            placeholder="support@brand.com"
                           />
                         </div>
                         <div>
                           <label className="block text-slate-400 mb-1">Phone</label>
                           <input
                             type="text"
-                            defaultValue={tenant.contact?.phone || ''}
-                            onChange={(e) => updateDraftTheme({ contact: { ...(tenant.contact || {}), phone: e.target.value } })}
+                            value={tenant.contact?.phone ?? ''}
+                            onChange={(e) => updateDraftContact({ phone: e.target.value })}
                             className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-[11px]"
+                            placeholder="+1 (555) 019-2834"
                           />
                         </div>
                       </div>
@@ -1112,9 +1209,10 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Office / Store Address</label>
                         <input
                           type="text"
-                          defaultValue={tenant.contact?.address || ''}
-                          onChange={(e) => updateDraftTheme({ contact: { ...(tenant.contact || {}), address: e.target.value } })}
+                          value={tenant.contact?.address ?? ''}
+                          onChange={(e) => updateDraftContact({ address: e.target.value })}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-[11px]"
+                          placeholder="100 Innovation Blvd, Silicon Valley, CA"
                         />
                       </div>
                     </div>
@@ -1136,11 +1234,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Section Title</label>
                         <input
                           type="text"
-                          defaultValue={tenant.pages?.find(p => p.slug === editingPageSlug)?.sections?.[0]?.title || ''}
+                          value={tenant.pages?.find(p => p.slug === editingPageSlug)?.sections?.[0]?.title ?? ''}
                           onChange={(e) => {
                             const pages = [...(tenant.pages || [])];
-                            const curPage = pages.find(p => p.slug === editingPageSlug);
-                            if (curPage && curPage.sections?.[0]) curPage.sections[0].title = e.target.value;
+                            let curPage = pages.find(p => p.slug === editingPageSlug);
+                            if (curPage) {
+                              if (!curPage.sections || curPage.sections.length === 0) {
+                                curPage.sections = [{ type: 'text_block', title: e.target.value }];
+                              } else {
+                                curPage.sections[0].title = e.target.value;
+                              }
+                            }
                             updateDraftPages(pages);
                           }}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
@@ -1151,11 +1255,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Subtitle / Tagline</label>
                         <input
                           type="text"
-                          defaultValue={tenant.pages?.find(p => p.slug === editingPageSlug)?.sections?.[0]?.subtitle || ''}
+                          value={tenant.pages?.find(p => p.slug === editingPageSlug)?.sections?.[0]?.subtitle ?? ''}
                           onChange={(e) => {
                             const pages = [...(tenant.pages || [])];
-                            const curPage = pages.find(p => p.slug === editingPageSlug);
-                            if (curPage && curPage.sections?.[0]) curPage.sections[0].subtitle = e.target.value;
+                            let curPage = pages.find(p => p.slug === editingPageSlug);
+                            if (curPage) {
+                              if (!curPage.sections || curPage.sections.length === 0) {
+                                curPage.sections = [{ type: 'text_block', title: '', subtitle: e.target.value }];
+                              } else {
+                                curPage.sections[0].subtitle = e.target.value;
+                              }
+                            }
                             updateDraftPages(pages);
                           }}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
@@ -1166,11 +1276,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         <label className="block text-slate-400 mb-1">Detailed Content Paragraph</label>
                         <textarea
                           rows={4}
-                          defaultValue={tenant.pages?.find(p => p.slug === editingPageSlug)?.sections?.[0]?.content || ''}
+                          value={tenant.pages?.find(p => p.slug === editingPageSlug)?.sections?.[0]?.content ?? ''}
                           onChange={(e) => {
                             const pages = [...(tenant.pages || [])];
-                            const curPage = pages.find(p => p.slug === editingPageSlug);
-                            if (curPage && curPage.sections?.[0]) curPage.sections[0].content = e.target.value;
+                            let curPage = pages.find(p => p.slug === editingPageSlug);
+                            if (curPage) {
+                              if (!curPage.sections || curPage.sections.length === 0) {
+                                curPage.sections = [{ type: 'text_block', title: '', content: e.target.value }];
+                              } else {
+                                curPage.sections[0].content = e.target.value;
+                              }
+                            }
                             updateDraftPages(pages);
                           }}
                           className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"

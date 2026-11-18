@@ -170,6 +170,14 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
     }) : prev);
   };
 
+  // Real-time Draft Contact Details Update (Email, Phone, Address)
+  const updateDraftContact = (contactUpdates) => {
+    setTenant((prev) => prev ? ({
+      ...prev,
+      contact: { ...prev.contact, ...contactUpdates }
+    }) : prev);
+  };
+
   // Atomic MongoDB Atlas Commit (Launches or Saves Drafts)
   const saveDraftToCloud = async () => {
     if (!tenant) return;
@@ -310,6 +318,7 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
         updateDraftBrand,
         updateDraftPages,
         updateDraftNavigation,
+        updateDraftContact,
         saveDraftToCloud,
         addProduct,
         setTenant,

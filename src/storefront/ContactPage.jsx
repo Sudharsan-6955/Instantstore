@@ -14,14 +14,19 @@ export const ContactPage = ({ viewport = 'desktop' }) => {
     setSubmitted(true);
   };
 
+  const contactPage = tenant?.pages?.find((p) => p.slug === 'contact');
+  const contactSection = contactPage?.sections?.[0];
+  const pageTitle = contactSection?.title || contactPage?.title || 'Get in Touch';
+  const pageSubtitle = contactSection?.subtitle || `Have questions about ${tenant?.name || 'our'}'s products, orders, or custom requests? We're here to help.`;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 sm:py-16">
       <div className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2 sm:mb-3">
-          Get in Touch
+          {pageTitle}
         </h1>
-        <p className="text-xs sm:text-sm opacity-70 max-w-lg mx-auto">
-          Have questions about {tenant.name}'s products, orders, or custom requests? We're here to help.
+        <p className="text-xs sm:text-sm opacity-70 max-w-lg mx-auto whitespace-pre-line">
+          {pageSubtitle}
         </p>
       </div>
 
