@@ -3,7 +3,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    
+    {
+      "source": "/__clerk/:path*",
+      "destination": "https://clerk.devtackle.in/:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
