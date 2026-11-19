@@ -2,7 +2,7 @@ import React from 'react';
 import { useTenant } from '../context/TenantContext';
 import { ArrowRight, Star, Sparkles, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
 
-export const HomePage = ({ onNavigateCatalog, viewport = 'desktop' }) => {
+export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, viewport = 'desktop' }) => {
   const { tenant, products } = useTenant();
 
   const isMobile = viewport === 'mobile';
@@ -30,12 +30,29 @@ export const HomePage = ({ onNavigateCatalog, viewport = 'desktop' }) => {
   );
   const projects = portfolioPage?.sections?.[0]?.items || [];
 
+  const isPortfolio = tenant.archetype === 'portfolio' || 
+    tenant.theme?.archetype === 'portfolio' ||
+    Boolean(portfolioPage && tenant.navigation?.find(n => n.path === '/portfolio')?.isVisible !== false);
+
   const heroSection = homeConfig?.sections?.find((s) => s.type === 'hero') || {
+    badgeText: isPortfolio ? 'Creative Portfolio & Showcase' : 'Official Brand Storefront',
     title: tenant.name || 'Welcome to Our Store',
     subtitle: tenant.tagline || 'Explore handcrafted goods with zero build latency.',
     ctaText: products?.length > 0 ? 'Explore Catalog' : (portfolioPage ? 'View Projects' : 'Explore Showcase'),
+    ctaLink: products?.length > 0 ? '/catalog' : '/portfolio',
     imageUrl: tenant.brand?.heroImage || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80',
   };
+
+  const badgeDisplay = heroSection.badgeText || (isPortfolio ? 'Creative Portfolio & Showcase' : 'Official Brand Storefront');
+
+  // Value Propositions / Highlights section (fully customizable)
+  const valuePropsSection = homeConfig?.sections?.find((s) => s.type === 'value_props');
+  const showValueProps = valuePropsSection ? valuePropsSection.isVisible !== false : !isPortfolio;
+  const valuePropsItems = valuePropsSection?.items?.length > 0 ? valuePropsSection.items : [
+    { title: 'Express Global Delivery', description: 'Tracked carbon-neutral shipping' },
+    { title: 'Direct Brand Warranty', description: '100% authentic merchant guarantee' },
+    { title: 'Hassle-Free Returns', description: '30-day money-back guarantee' },
+  ];
 
   const featuredProducts = products?.filter((p) => p.isFeatured) || products?.slice(0, 4) || [];
 
@@ -60,7 +77,7 @@ export const HomePage = ({ onNavigateCatalog, viewport = 'desktop' }) => {
               style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
               className="text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block"
             >
-              Official Brand Storefront
+              {badgeDisplay}
             </span>
 
             <h1 className={`font-black tracking-tight leading-tight mb-3 sm:mb-4 ${
@@ -77,14 +94,21 @@ export const HomePage = ({ onNavigateCatalog, viewport = 'desktop' }) => {
 
             <div className="flex flex-wrap items-center gap-3">
               <button
-                onClick={onNavigateCatalog}
+                onClick={() => {
+                  if (heroSection.ctaLink === '/portfolio' || isPortfolio) {
+                    if (onNavigatePortfolio) onNavigatePortfolio();
+                    else onNavigateCatalog();
+                  } else {
+                    onNavigateCatalog();
+                  }
+                }}
                 style={{
                   backgroundColor: tenant.theme?.primaryColor || '#3B82F6',
                   borderRadius: tenant.theme?.borderRadius || '0.75rem',
                 }}
                 className="px-5 sm:px-6 py-2.5 sm:py-3 text-white font-semibold text-xs sm:text-sm shadow-xl hover:opacity-90 transition-all flex items-center space-x-2"
               >
-                <span>{heroSection.ctaText || 'Shop Collection'}</span>
+                <span>{heroSection.ctaText || (isPortfolio ? 'View Selected Works' : 'Shop Collection')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -92,49 +116,27 @@ export const HomePage = ({ onNavigateCatalog, viewport = 'desktop' }) => {
         </div>
       </section>
 
-      {/* Value Propositions */}
-      <section className="border-y border-slate-800/40 py-6 px-4">
-        <div className={`max-w-6xl mx-auto grid ${valuePropsGrid} text-xs`}>
-          <div className="flex items-center space-x-3 p-2.5 sm:p-3 bg-slate-900/30 rounded-xl border border-slate-800/40">
-            <div 
-              style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
-              className="p-2 sm:p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50 shrink-0"
-            >
-              <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="font-semibold text-xs sm:text-sm truncate">Express Global Delivery</div>
-              <div className="opacity-70 text-[11px] truncate">Tracked carbon-neutral shipping</div>
-            </div>
+      {/* Value Propositions / Highlights Bar (Fully Customizable & Toggleable) */}
+      {showValueProps && (
+        <section className="border-y border-slate-800/40 py-6 px-4">
+          <div className={`max-w-6xl mx-auto grid ${valuePropsGrid} text-xs`}>
+            {valuePropsItems.slice(0, 3).map((item, idx) => (
+              <div key={idx} className="flex items-center space-x-3 p-2.5 sm:p-3 bg-slate-900/30 rounded-xl border border-slate-800/40">
+                <div 
+                  style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
+                  className="p-2 sm:p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50 shrink-0"
+                >
+                  {idx === 0 ? <Truck className="w-4 h-4 sm:w-5 sm:h-5" /> : idx === 1 ? <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" /> : <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs sm:text-sm truncate">{item.title}</div>
+                  <div className="opacity-70 text-[11px] truncate">{item.description}</div>
+                </div>
+              </div>
+            ))}
           </div>
-
-          <div className="flex items-center space-x-3 p-2.5 sm:p-3 bg-slate-900/30 rounded-xl border border-slate-800/40">
-            <div 
-              style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
-              className="p-2 sm:p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50 shrink-0"
-            >
-              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="font-semibold text-xs sm:text-sm truncate">Direct Brand Warranty</div>
-              <div className="opacity-70 text-[11px] truncate">100% authentic merchant guarantee</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-2.5 sm:p-3 bg-slate-900/30 rounded-xl border border-slate-800/40">
-            <div 
-              style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
-              className="p-2 sm:p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50 shrink-0"
-            >
-              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="font-semibold text-xs sm:text-sm truncate">Hassle-Free Returns</div>
-              <div className="opacity-70 text-[11px] truncate">30-day money-back guarantee</div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Featured Products or Portfolio Projects Section */}
       {featuredProducts.length > 0 ? (
@@ -238,70 +240,64 @@ export const HomePage = ({ onNavigateCatalog, viewport = 'desktop' }) => {
             </div>
           </div>
 
-          <div className={`grid ${productGrid}`}>
-            {(projects.length > 0 ? projects : [
-              {
-                title: 'Visual Identity & Branding',
-                description: 'End-to-end design system, typography, and cohesive brand experience.',
-                imageUrl: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80'
-              },
-              {
-                title: 'Digital Experience Design',
-                description: 'Human-centered interactive digital interfaces built with fluid motion.',
-                imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80'
-              },
-              {
-                title: 'Spatial Architecture & Documentation',
-                description: 'High-contrast spatial documentation of modern interior and structural craft.',
-                imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'
-              }
-            ]).map((project, idx) => (
-              <div
-                key={idx}
-                style={{ borderRadius: tenant.theme?.borderRadius || '0.75rem' }}
-                className="group border border-slate-800/60 hover:border-slate-700 overflow-hidden bg-slate-900/30 flex flex-col justify-between transition-all"
-              >
-                <div>
-                  <div className="h-48 sm:h-56 overflow-hidden relative bg-slate-950">
-                    <img
-                      src={project.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80'}
-                      alt={project.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <span 
-                      style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
-                      className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider shadow"
+          {projects.length > 0 ? (
+            <div className={`grid ${productGrid}`}>
+              {projects.map((project, idx) => (
+                <div
+                  key={idx}
+                  style={{ borderRadius: tenant.theme?.borderRadius || '0.75rem' }}
+                  className="group border border-slate-800/60 hover:border-slate-700 overflow-hidden bg-slate-900/30 flex flex-col justify-between transition-all"
+                >
+                  <div>
+                    <div className="h-48 sm:h-56 overflow-hidden relative bg-slate-950">
+                      <img
+                        src={project.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80'}
+                        alt={project.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span 
+                        style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
+                        className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider shadow"
+                      >
+                        Project #{idx + 1}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 sm:p-4">
+                      <h4 className="font-semibold text-sm mb-1.5 line-clamp-1">
+                        {project.title}
+                      </h4>
+                      <p className="text-xs opacity-70 line-clamp-3 leading-relaxed">
+                        {project.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 sm:p-4 pt-0 flex items-center justify-between border-t border-slate-800/40 mt-2">
+                    <span
+                      style={{
+                        color: tenant.theme?.primaryColor || '#3B82F6',
+                        borderColor: `${tenant.theme?.primaryColor || '#3B82F6'}40`,
+                        borderRadius: tenant.theme?.borderRadius || '0.75rem',
+                      }}
+                      className="px-2.5 py-1 bg-slate-900/60 border text-[11px] font-semibold flex items-center space-x-1 select-none"
                     >
-                      Project #{idx + 1}
+                      <Sparkles className="w-3 h-3 shrink-0" />
+                      <span>Showcase Work</span>
                     </span>
                   </div>
-
-                  <div className="p-3.5 sm:p-4">
-                    <h4 className="font-semibold text-sm mb-1.5 line-clamp-1">
-                      {project.title}
-                    </h4>
-                    <p className="text-xs opacity-70 line-clamp-3 leading-relaxed">
-                      {project.description}
-                    </p>
-                  </div>
                 </div>
-
-                <div className="p-3.5 sm:p-4 pt-0 flex items-center justify-between border-t border-slate-800/40 mt-2">
-                  <span
-                    style={{
-                      color: tenant.theme?.primaryColor || '#3B82F6',
-                      borderColor: `${tenant.theme?.primaryColor || '#3B82F6'}40`,
-                      borderRadius: tenant.theme?.borderRadius || '0.75rem',
-                    }}
-                    className="px-2.5 py-1 bg-slate-900/60 border text-[11px] font-semibold flex items-center space-x-1 select-none"
-                  >
-                    <Sparkles className="w-3 h-3 shrink-0" />
-                    <span>Showcase Work</span>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/20 max-w-lg mx-auto">
+              <Sparkles className="w-6 h-6 text-indigo-400 mx-auto mb-2" />
+              <h4 className="text-sm font-semibold text-slate-300">No Showcase Projects Yet</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Add your works, case studies, and photos in InstantStore Studio to display them here.
+              </p>
+            </div>
+          )}
         </section>
       )}
     </div>

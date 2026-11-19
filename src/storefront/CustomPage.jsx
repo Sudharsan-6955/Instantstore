@@ -23,11 +23,7 @@ export const CustomPage = ({ pageSlug, viewport = 'desktop' }) => {
   };
 
   const primarySection = page.sections?.[0] || {};
-  const items = primarySection.items || [
-    { title: 'Premium Craftsmanship', description: 'Meticulously engineered to deliver enduring quality.' },
-    { title: 'Edge Performance', description: 'Hydrated in milliseconds via database virtualization.' },
-    { title: 'Guaranteed Satisfaction', description: 'Backed by our brand commitment and direct support.' },
-  ];
+  const items = primarySection.items || [];
 
   return (
     <div className="animate-fadeIn">
@@ -83,40 +79,46 @@ export const CustomPage = ({ pageSlug, viewport = 'desktop' }) => {
         {/* Feature Cards Grid */}
         <div>
           <h3 className="text-base font-bold mb-4 uppercase tracking-wider text-xs text-slate-400">
-            Key Highlights
+            {pageSlug === 'portfolio' ? 'Selected Projects' : 'Key Highlights'}
           </h3>
-          <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 sm:grid-cols-3 gap-4'}`}>
-            {items.map((item, idx) => (
-              <div 
-                key={idx}
-                className="bg-slate-900/40 border border-slate-800/70 rounded-2xl flex flex-col justify-between overflow-hidden group hover:border-slate-700 transition-all"
-              >
-                <div>
-                  {item.imageUrl ? (
-                    <div className="h-44 w-full overflow-hidden bg-slate-950 border-b border-slate-800/70">
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                  ) : null}
-                  <div className="p-4 sm:p-5">
-                    {!item.imageUrl && (
-                      <div 
-                        style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
-                        className="w-8 h-8 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-3"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
+          {items.length > 0 ? (
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 sm:grid-cols-3 gap-4'}`}>
+              {items.map((item, idx) => (
+                <div 
+                  key={idx}
+                  className="bg-slate-900/40 border border-slate-800/70 rounded-2xl flex flex-col justify-between overflow-hidden group hover:border-slate-700 transition-all"
+                >
+                  <div>
+                    {item.imageUrl ? (
+                      <div className="h-44 w-full overflow-hidden bg-slate-950 border-b border-slate-800/70">
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
                       </div>
-                    )}
-                    <h4 className="font-bold text-sm mb-1">{item.title}</h4>
-                    <p className="text-xs opacity-70 leading-relaxed">{item.description}</p>
+                    ) : null}
+                    <div className="p-4 sm:p-5">
+                      {!item.imageUrl && (
+                        <div 
+                          style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
+                          className="w-8 h-8 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-3"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                      )}
+                      <h4 className="font-bold text-sm mb-1">{item.title}</h4>
+                      <p className="text-xs opacity-70 leading-relaxed">{item.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/20 text-slate-500 text-xs">
+              No showcase items added to this page yet. You can add projects in InstantStore Studio.
+            </div>
+          )}
         </div>
       </section>
     </div>

@@ -74,6 +74,9 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
 
   // Focus purely on frontend showcase pages: Brand & Theme, Multi-Pages, and Catalog
   const [activeTab, setActiveTab] = useState('brand'); // 'brand' | 'pages' | 'catalog'
+  const [catalogMode, setCatalogMode] = useState(() => {
+    return (tenant?.archetype === 'portfolio' || tenant?.pages?.some(p => p.slug === 'portfolio')) ? 'portfolio' : 'ecommerce';
+  });
   const [viewport, setViewport] = useState('desktop'); // 'desktop' | 'tablet' | 'mobile'
   const [previewPage, setPreviewPage] = useState('home');
   const [editingPageSlug, setEditingPageSlug] = useState('home');
@@ -84,10 +87,153 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
   const [availableStores, setAvailableStores] = useState([]);
 
+  // Portfolio projects state & helpers
+  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [newProject, setNewProject] = useState({
+    title: '',
+    category: '',
+    description: '',
+    imageUrl: '',
+  });
+
+  const portfolioPage = tenant?.pages?.find(p => p.slug === 'portfolio');
+  const portfolioItems = portfolioPage?.sections?.[0]?.items || [];
+  const homePage = tenant?.pages?.find(p => p.slug === 'home');
+  const homeHero = homePage?.sections?.find(s => s.type === 'hero');
+  const homeValueProps = homePage?.sections?.find(s => s.type === 'value_props');
+  const isPortfolio = catalogMode === 'portfolio' || tenant?.archetype === 'portfolio' || tenant?.theme?.archetype === 'portfolio';
+
+  const handleCreateProject = (e) => {
+    e.preventDefault();
+    if (!newProject.title.trim()) return;
+    const pages = [...(tenant.pages || [])];
+    let p = pages.find(pg => pg.slug === 'portfolio');
+    if (!p) {
+      p = {
+        slug: 'portfolio',
+        title: 'Portfolio',
+        sections: [{
+          type: 'story',
+          title: 'Selected Creative Works',
+          subtitle: 'Excellence in visual craft, brand design, and modern digital experiences.',
+          items: []
+        }]
+      };
+      pages.push(p);
+    }
+    if (!p.sections || p.sections.length === 0) {
+      p.sections = [{ type: 'story', title: 'Selected Creative Works', items: [] }];
+    }
+    if (!p.sections[0].items) {
+      p.sections[0].items = [];
+    }
+    p.sections[0].items.unshift({
+      title: newProject.title.trim(),
+      category: newProject.category.trim() || 'Creative Work',
+      description: newProject.description.trim(),
+      imageUrl: newProject.imageUrl.trim() || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
+    });
+    updateDraftPages(pages);
+    setNewProject({ title: '', category: '', description: '', imageUrl: '' });
+    setIsAddProjectOpen(false);
+  };
+
+  const handleDeleteProject = (indexToDelete) => {
+    const pages = [...(tenant.pages || [])];
+    let p = pages.find(pg => pg.slug === 'portfolio');
+    if (p?.sections?.[0]?.items) {
+      p.sections[0].items.splice(indexToDelete, 1);
+      updateDraftPages(pages);
+    }
+  };
+
+  const handleClearAllProjects = () => {
+    const pages = [...(tenant.pages || [])];
+    let p = pages.find(pg => pg.slug === 'portfolio');
+    if (p?.sections?.[0]?.items) {
+      p.sections[0].items = [];
+      updateDraftPages(pages);
+    }
+  };
+
+  const updateHomeHero = (updates) => {
+    const pages = [...(tenant.pages || [])];
+    let home = pages.find(p => p.slug === 'home');
+    if (!home) {
+      home = { slug: 'home', title: 'Home', sections: [{ type: 'hero', ...updates }] };
+      pages.push(home);
+    } else {
+      if (!home.sections || home.sections.length === 0) {
+        home.sections = [{ type: 'hero', ...updates }];
+      } else {
+        home.sections[0] = { ...home.sections[0], ...updates };
+      }
+    }
+    updateDraftPages(pages);
+  };
+
+  const updateHomeValuePropsVisible = (isVisible) => {
+    const pages = [...(tenant.pages || [])];
+    let home = pages.find(p => p.slug === 'home');
+    if (!home) {
+      home = { slug: 'home', title: 'Home', sections: [] };
+      pages.push(home);
+    }
+    if (!home.sections) home.sections = [];
+    let vp = home.sections.find(s => s.type === 'value_props');
+    if (!vp) {
+      vp = {
+        type: 'value_props',
+        title: 'Highlights',
+        isVisible,
+        items: [
+          { title: 'Express Global Delivery', description: 'Tracked carbon-neutral shipping' },
+          { title: 'Direct Brand Warranty', description: '100% authentic merchant guarantee' },
+          { title: 'Hassle-Free Returns', description: '30-day money-back guarantee' }
+        ]
+      };
+      home.sections.push(vp);
+    } else {
+      vp.isVisible = isVisible;
+    }
+    updateDraftPages(pages);
+  };
+
+  const updateHomeValuePropCard = (cardIdx, updates) => {
+    const pages = [...(tenant.pages || [])];
+    let home = pages.find(p => p.slug === 'home');
+    if (!home) {
+      home = { slug: 'home', title: 'Home', sections: [] };
+      pages.push(home);
+    }
+    if (!home.sections) home.sections = [];
+    let vp = home.sections.find(s => s.type === 'value_props');
+    if (!vp) {
+      vp = {
+        type: 'value_props',
+        title: 'Highlights',
+        isVisible: true,
+        items: [
+          { title: 'Express Global Delivery', description: 'Tracked carbon-neutral shipping' },
+          { title: 'Direct Brand Warranty', description: '100% authentic merchant guarantee' },
+          { title: 'Hassle-Free Returns', description: '30-day money-back guarantee' }
+        ]
+      };
+      home.sections.push(vp);
+    }
+    if (!vp.items) vp.items = [];
+    while (vp.items.length <= cardIdx) {
+      vp.items.push({ title: '', description: '' });
+    }
+    vp.items[cardIdx] = { ...vp.items[cardIdx], ...updates };
+    updateDraftPages(pages);
+  };
+
   // Preset Industry Archetype Switcher
   const handleApplyTemplate = (templateKey) => {
     if (!tenant) return;
     if (templateKey === 'ecommerce') {
+      setCatalogMode('ecommerce');
       updateDraftTheme({
         primaryColor: '#6366F1',
         secondaryColor: '#0F172A',
@@ -98,6 +244,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
         mode: 'dark',
       });
       updateDraftIdentity({
+        archetype: 'ecommerce',
         tagline: 'Instant handcrafted storefront with zero build latency.',
       });
       const nav = [
@@ -112,6 +259,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
       setSaveSuccessMessage('Applied E-Commerce Storefront Template!');
       setTimeout(() => setSaveSuccessMessage(''), 3000);
     } else if (templateKey === 'portfolio') {
+      setCatalogMode('portfolio');
       updateDraftTheme({
         primaryColor: '#EC4899',
         secondaryColor: '#18181B',
@@ -122,6 +270,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
         mode: 'dark',
       });
       updateDraftIdentity({
+        archetype: 'portfolio',
         tagline: 'Curated architectural showcases, visual design, and creative works.',
       });
       let pages = [...(tenant.pages || [])];
@@ -159,6 +308,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
       setSaveSuccessMessage('Applied Creative Portfolio Template!');
       setTimeout(() => setSaveSuccessMessage(''), 3000);
     } else if (templateKey === 'landing') {
+      setCatalogMode('portfolio');
       updateDraftTheme({
         primaryColor: '#10B981',
         secondaryColor: '#0F172A',
@@ -169,6 +319,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
         mode: 'dark',
       });
       updateDraftIdentity({
+        archetype: 'business',
         tagline: 'Next-generation zero-build platform engineered for global performance.',
       });
       let pages = [...(tenant.pages || [])];
@@ -575,8 +726,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Package className="w-3.5 h-3.5" />
-              <span>Catalog ({products?.length || 0})</span>
+              {catalogMode === 'portfolio' ? (
+                <>
+                  <Briefcase className="w-3.5 h-3.5" />
+                  <span>Projects ({portfolioItems.length})</span>
+                </>
+              ) : (
+                <>
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Catalog ({products?.length || 0})</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -990,53 +1150,62 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
 
                   {/* 1. HOME PAGE CONTENT EDITOR */}
                   {editingPageSlug === 'home' && (
-                    <div className="p-3.5 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-3">
+                    <div className="p-3.5 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-3.5">
                       <div>
-                        <label className="block text-slate-400 mb-1">Headline</label>
+                        <label className="block text-slate-400 text-xs mb-1">Top Badge Text</label>
                         <input
                           type="text"
-                          value={tenant.pages?.find(p => p.slug === 'home')?.sections?.[0]?.title ?? tenant.name}
-                          onChange={(e) => {
-                            const pages = [...(tenant.pages || [])];
-                            let home = pages.find(p => p.slug === 'home');
-                            if (!home) {
-                              home = { slug: 'home', title: 'Home', sections: [{ type: 'hero', title: e.target.value }] };
-                              pages.push(home);
-                            } else {
-                              if (!home.sections || home.sections.length === 0) {
-                                home.sections = [{ type: 'hero', title: e.target.value }];
-                              } else {
-                                home.sections[0].title = e.target.value;
-                              }
-                            }
-                            updateDraftPages(pages);
-                          }}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                          placeholder="e.g. Official Portfolio / Brand Showcase"
+                          value={homeHero?.badgeText ?? (isPortfolio ? 'Creative Portfolio & Showcase' : 'Official Brand Storefront')}
+                          onChange={(e) => updateHomeHero({ badgeText: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-400 mb-1">Hero Subtitle</label>
+                        <label className="block text-slate-400 text-xs mb-1">Main Headline</label>
+                        <input
+                          type="text"
+                          value={homeHero?.title ?? tenant.name}
+                          onChange={(e) => updateHomeHero({ title: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-semibold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 text-xs mb-1">Hero Subtitle</label>
                         <textarea
                           rows={2}
-                          value={tenant.pages?.find(p => p.slug === 'home')?.sections?.[0]?.subtitle ?? tenant.tagline}
-                          onChange={(e) => {
-                            const pages = [...(tenant.pages || [])];
-                            let home = pages.find(p => p.slug === 'home');
-                            if (!home) {
-                              home = { slug: 'home', title: 'Home', sections: [{ type: 'hero', title: tenant.name, subtitle: e.target.value }] };
-                              pages.push(home);
-                            } else {
-                              if (!home.sections || home.sections.length === 0) {
-                                home.sections = [{ type: 'hero', title: tenant.name, subtitle: e.target.value }];
-                              } else {
-                                home.sections[0].subtitle = e.target.value;
-                              }
-                            }
-                            updateDraftPages(pages);
-                          }}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                          value={homeHero?.subtitle ?? tenant.tagline}
+                          onChange={(e) => updateHomeHero({ subtitle: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs leading-relaxed"
                         />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-slate-400 text-xs mb-1">CTA Button Text</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. View Selected Works"
+                            value={homeHero?.ctaText ?? (isPortfolio ? 'View Selected Works' : 'Shop Collection')}
+                            onChange={(e) => updateHomeHero({ ctaText: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 text-xs mb-1">Button Link Target</label>
+                          <select
+                            value={homeHero?.ctaLink ?? (isPortfolio ? '/portfolio' : '/catalog')}
+                            onChange={(e) => updateHomeHero({ ctaLink: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          >
+                            <option value="/portfolio">/portfolio (Portfolio)</option>
+                            <option value="/catalog">/catalog (Catalog)</option>
+                            <option value="/about">/about (About)</option>
+                            <option value="/contact">/contact (Contact)</option>
+                          </select>
+                        </div>
                       </div>
 
                       {/* Cloudinary Hero Banner Background Uploader */}
@@ -1045,14 +1214,64 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         currentValue={tenant.brand?.heroImage || ''}
                         onUploadSuccess={(url) => {
                           updateDraftBrand({ heroImage: url });
-                          const pages = [...(tenant.pages || [])];
-                          let home = pages.find(p => p.slug === 'home');
-                          if (home && home.sections?.[0]) home.sections[0].imageUrl = url;
-                          updateDraftPages(pages);
+                          updateHomeHero({ imageUrl: url });
                         }}
                         recommendedSize="1600x800px landscape"
                         aspectRatio="banner"
                       />
+
+                      {/* Feature Highlights & Value Propositions Section (Screenshot 4) */}
+                      <div className="p-3 bg-slate-950/70 border border-slate-700/80 rounded-xl space-y-2.5 pt-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider">
+                            Feature Highlights Bar
+                          </span>
+                          <label className="flex items-center space-x-1.5 cursor-pointer text-[11px] text-slate-300">
+                            <input
+                              type="checkbox"
+                              checked={homeValueProps ? homeValueProps.isVisible !== false : !isPortfolio}
+                              onChange={(e) => updateHomeValuePropsVisible(e.target.checked)}
+                              className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0"
+                            />
+                            <span>Show on Storefront</span>
+                          </label>
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Customize the 3 highlight boxes beneath the hero banner (or uncheck to hide):
+                        </p>
+
+                        {(homeValueProps ? homeValueProps.isVisible !== false : !isPortfolio) && (
+                          <div className="space-y-2 pt-1">
+                            {[0, 1, 2].map((idx) => {
+                              const defaultCards = [
+                                { title: 'Express Global Delivery', description: 'Tracked carbon-neutral shipping' },
+                                { title: 'Direct Brand Warranty', description: '100% authentic merchant guarantee' },
+                                { title: 'Hassle-Free Returns', description: '30-day money-back guarantee' }
+                              ];
+                              const card = homeValueProps?.items?.[idx] || defaultCards[idx];
+                              return (
+                                <div key={idx} className="p-2 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                                  <div className="text-[9px] font-bold text-slate-400">Box #{idx + 1}</div>
+                                  <input
+                                    type="text"
+                                    placeholder="Title"
+                                    value={card?.title || ''}
+                                    onChange={(e) => updateHomeValuePropCard(idx, { title: e.target.value })}
+                                    className="w-full px-2 py-1 bg-slate-950 border border-slate-700 rounded text-white text-xs"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Subtitle / Description"
+                                    value={card?.description || ''}
+                                    onChange={(e) => updateHomeValuePropCard(idx, { description: e.target.value })}
+                                    className="w-full px-2 py-1 bg-slate-950 border border-slate-700 rounded text-white text-xs"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1433,165 +1652,342 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
               </div>
             )}
 
-            {/* TAB 3: PRODUCT CATALOG MANAGER */}
+            {/* TAB 3: DUAL-MODE SHOWCASE MANAGER (Projects vs Products) */}
             {activeTab === 'catalog' && (
               <div className="space-y-4 animate-fadeIn">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-slate-100 uppercase tracking-wider text-[11px]">Product Catalog</h4>
-                    <p className="text-[10px] text-slate-400">Scoped strictly to {tenant.subdomain}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {products?.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm('Delete all products from this catalog? (You can add custom ones anytime)')) {
-                            clearAllProducts();
-                          }
-                        }}
-                        className="px-2.5 py-1.5 text-xs text-red-400 bg-red-950/40 border border-red-800/60 hover:bg-red-900/50 rounded-xl font-medium flex items-center space-x-1 transition-colors cursor-pointer"
-                        title="Delete all products"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Clear All</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setIsAddProductOpen(!isAddProductOpen)}
-                      style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
-                      className="px-3 py-1.5 text-white rounded-xl font-medium flex items-center space-x-1 shadow text-xs cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>{isAddProductOpen ? 'Close Form' : 'Add Item'}</span>
-                    </button>
-                  </div>
+                {/* Archetype Mode Switcher */}
+                <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCatalogMode('portfolio');
+                      updateDraftIdentity({ archetype: 'portfolio' });
+                    }}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center space-x-1.5 transition-all ${
+                      catalogMode === 'portfolio'
+                        ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span>Portfolio Projects</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCatalogMode('ecommerce');
+                      updateDraftIdentity({ archetype: 'ecommerce' });
+                    }}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center space-x-1.5 transition-all ${
+                      catalogMode === 'ecommerce'
+                        ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Package className="w-3.5 h-3.5" />
+                    <span>Store Catalog</span>
+                  </button>
                 </div>
 
-                {/* Add Product Inline Form with Cloudinary */}
-                {isAddProductOpen && (
-                  <form onSubmit={handleCreateProduct} className="p-4 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-3 animate-fadeIn">
-                    <h5 className="font-bold text-white text-xs">New Product Details</h5>
-                    
-                    <div>
-                      <label className="block text-slate-400 mb-1">Title</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Ergonomic Desk Mat"
-                        value={newProduct.title}
-                        onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
+                {/* 1. PORTFOLIO PROJECTS MANAGER */}
+                {catalogMode === 'portfolio' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <label className="block text-slate-400 mb-1">Price ($)</label>
-                        <input
-                          type="number"
-                          required
-                          value={newProduct.price}
-                          onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
-                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                        />
+                        <h4 className="font-bold text-slate-100 uppercase tracking-wider text-[11px]">Projects & Showcase</h4>
+                        <p className="text-[10px] text-slate-400">Scoped strictly to {tenant.subdomain}</p>
                       </div>
-                      <div>
-                        <label className="block text-slate-400 mb-1">Category</label>
-                        <input
-                          type="text"
-                          value={newProduct.category}
-                          onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Product Photo via Cloudinary */}
-                    <div className="pt-1">
-                      <CloudinaryUploader
-                        label="Product Photo (Cloudinary)"
-                        currentValue={newProduct.images?.[0] || ''}
-                        onUploadSuccess={(url) => setNewProduct({ ...newProduct, images: [url] })}
-                        recommendedSize="Square 800x800px product photo"
-                        aspectRatio="square"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-slate-400 mb-1">Inventory Count</label>
-                        <input
-                          type="number"
-                          value={newProduct.inventory}
-                          onChange={(e) => setNewProduct({ ...newProduct, inventory: Number(e.target.value) })}
-                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 mb-1">Badge (Optional)</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Bestseller, New"
-                          value={newProduct.badge}
-                          onChange={(e) => setNewProduct({ ...newProduct, badge: e.target.value })}
-                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
-                      className="w-full py-2 text-white font-semibold rounded-xl shadow mt-2"
-                    >
-                      Commit Product to Catalog
-                    </button>
-                  </form>
-                )}
-
-                {/* Product List */}
-                <div className="space-y-2">
-                  {products?.length === 0 ? (
-                    <div className="p-6 text-center border border-dashed border-slate-800 rounded-xl text-slate-500">
-                      No products in this store catalog yet. Click "+ Add Item" above to add products with Cloudinary photos!
-                    </div>
-                  ) : (
-                    products?.map((prod) => (
-                      <div
-                        key={prod._id}
-                        className="p-2.5 bg-slate-800/40 border border-slate-800 rounded-xl flex items-center justify-between gap-3 group hover:border-slate-700 transition-colors"
-                      >
-                        <img
-                          src={prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80'}
-                          alt={prod.title}
-                          className="w-10 h-10 rounded-lg object-cover bg-slate-950 shrink-0 border border-slate-700/60"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-slate-200 truncate">{prod.title}</div>
-                          <div className="text-[10px] text-slate-400 flex items-center space-x-2">
-                            <span className="text-white font-bold">${prod.price}</span>
-                            <span>•</span>
-                            <span>{prod.category}</span>
-                            {prod.badge && <span className="text-amber-400">({prod.badge})</span>}
-                          </div>
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        {portfolioItems.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm('Delete all projects from this portfolio?')) {
+                                handleClearAllProjects();
+                              }
+                            }}
+                            className="px-2.5 py-1.5 text-xs text-red-400 bg-red-950/40 border border-red-800/60 hover:bg-red-900/50 rounded-xl font-medium flex items-center space-x-1 transition-colors cursor-pointer"
+                            title="Delete all projects"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Clear All</span>
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => {
-                            if (window.confirm(`Delete "${prod.title}"?`)) {
-                              deleteProduct(prod._id);
-                            }
-                          }}
-                          className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer shrink-0"
-                          title="Delete Product"
+                          onClick={() => setIsAddProjectOpen(!isAddProjectOpen)}
+                          style={{ backgroundColor: tenant.theme?.primaryColor || '#EC4899' }}
+                          className="px-3 py-1.5 text-white rounded-xl font-medium flex items-center space-x-1 shadow text-xs cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{isAddProjectOpen ? 'Close Form' : 'Add Project'}</span>
                         </button>
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+
+                    {/* Add Project Inline Form */}
+                    {isAddProjectOpen && (
+                      <form onSubmit={handleCreateProject} className="p-4 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-3 animate-fadeIn">
+                        <h5 className="font-bold text-white text-xs">New Project / Case Study</h5>
+                        
+                        <div>
+                          <label className="block text-slate-400 mb-1 text-xs">Project Title</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Minimalist Identity System"
+                            value={newProject.title}
+                            onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-400 mb-1 text-xs">Category / Medium</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Brand Identity, Architecture, Photography"
+                            value={newProject.category}
+                            onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          />
+                        </div>
+
+                        {/* Project Photo via Cloudinary */}
+                        <div className="pt-1">
+                          <CloudinaryUploader
+                            label="Project Preview Image"
+                            currentValue={newProject.imageUrl}
+                            onUploadSuccess={(url) => setNewProject({ ...newProject, imageUrl: url })}
+                            recommendedSize="800x600px preview photo"
+                            aspectRatio="banner"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-400 mb-1 text-xs">Description</label>
+                          <textarea
+                            rows={2}
+                            placeholder="Brief synopsis, client, or deliverables..."
+                            value={newProject.description}
+                            onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          style={{ backgroundColor: tenant.theme?.primaryColor || '#EC4899' }}
+                          className="w-full py-2 text-white font-semibold rounded-xl shadow mt-2 text-xs"
+                        >
+                          Commit Project to Portfolio
+                        </button>
+                      </form>
+                    )}
+
+                    {/* Projects List */}
+                    <div className="space-y-2">
+                      {portfolioItems.length === 0 ? (
+                        <div className="p-6 text-center border border-dashed border-slate-800 rounded-xl text-slate-500 text-xs">
+                          No projects in this portfolio yet. Click "+ Add Project" above to showcase your creative work!
+                        </div>
+                      ) : (
+                        portfolioItems.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2.5 bg-slate-800/40 border border-slate-800 rounded-xl flex items-center justify-between gap-3 group hover:border-slate-700 transition-colors"
+                          >
+                            <img
+                              src={item.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80'}
+                              alt={item.title}
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-950 shrink-0 border border-slate-700/60"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-slate-200 truncate text-xs">{item.title}</div>
+                              <div className="text-[10px] text-slate-400 truncate">
+                                {item.category || 'Creative Work'} &bull; {item.description || 'No description'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Delete project "${item.title}"?`)) {
+                                  handleDeleteProject(idx);
+                                }
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer shrink-0"
+                              title="Delete Project"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. E-COMMERCE PRODUCTS MANAGER */}
+                {catalogMode === 'ecommerce' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-slate-100 uppercase tracking-wider text-[11px]">Product Catalog</h4>
+                        <p className="text-[10px] text-slate-400">Scoped strictly to {tenant.subdomain}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {products?.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm('Delete all products from this catalog? (You can add custom ones anytime)')) {
+                                clearAllProducts();
+                              }
+                            }}
+                            className="px-2.5 py-1.5 text-xs text-red-400 bg-red-950/40 border border-red-800/60 hover:bg-red-900/50 rounded-xl font-medium flex items-center space-x-1 transition-colors cursor-pointer"
+                            title="Delete all products"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Clear All</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setIsAddProductOpen(!isAddProductOpen)}
+                          style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
+                          className="px-3 py-1.5 text-white rounded-xl font-medium flex items-center space-x-1 shadow text-xs cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{isAddProductOpen ? 'Close Form' : 'Add Item'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Add Product Inline Form with Cloudinary */}
+                    {isAddProductOpen && (
+                      <form onSubmit={handleCreateProduct} className="p-4 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-3 animate-fadeIn">
+                        <h5 className="font-bold text-white text-xs">New Product Details</h5>
+                        
+                        <div>
+                          <label className="block text-slate-400 mb-1 text-xs">Title</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Ergonomic Desk Mat"
+                            value={newProduct.title}
+                            onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-slate-400 mb-1 text-xs">Price ($)</label>
+                            <input
+                              type="number"
+                              required
+                              value={newProduct.price}
+                              onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+                              className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 mb-1 text-xs">Category</label>
+                            <input
+                              type="text"
+                              value={newProduct.category}
+                              onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                              className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Product Photo via Cloudinary */}
+                        <div className="pt-1">
+                          <CloudinaryUploader
+                            label="Product Photo (Cloudinary)"
+                            currentValue={newProduct.images?.[0] || ''}
+                            onUploadSuccess={(url) => setNewProduct({ ...newProduct, images: [url] })}
+                            recommendedSize="Square 800x800px product photo"
+                            aspectRatio="square"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-slate-400 mb-1 text-xs">Inventory Count</label>
+                            <input
+                              type="number"
+                              value={newProduct.inventory}
+                              onChange={(e) => setNewProduct({ ...newProduct, inventory: Number(e.target.value) })}
+                              className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-400 mb-1 text-xs">Badge (Optional)</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Bestseller, New"
+                              value={newProduct.badge}
+                              onChange={(e) => setNewProduct({ ...newProduct, badge: e.target.value })}
+                              className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
+                          className="w-full py-2 text-white font-semibold rounded-xl shadow mt-2 text-xs"
+                        >
+                          Commit Product to Catalog
+                        </button>
+                      </form>
+                    )}
+
+                    {/* Product List */}
+                    <div className="space-y-2">
+                      {products?.length === 0 ? (
+                        <div className="p-6 text-center border border-dashed border-slate-800 rounded-xl text-slate-500 text-xs">
+                          No products in this store catalog yet. Click "+ Add Item" above to add products with Cloudinary photos!
+                        </div>
+                      ) : (
+                        products?.map((prod) => (
+                          <div
+                            key={prod._id}
+                            className="p-2.5 bg-slate-800/40 border border-slate-800 rounded-xl flex items-center justify-between gap-3 group hover:border-slate-700 transition-colors"
+                          >
+                            <img
+                              src={prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80'}
+                              alt={prod.title}
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-950 shrink-0 border border-slate-700/60"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-slate-200 truncate text-xs">{prod.title}</div>
+                              <div className="text-[10px] text-slate-400 flex items-center space-x-2">
+                                <span className="text-white font-bold">${prod.price}</span>
+                                <span>•</span>
+                                <span>{prod.category}</span>
+                                {prod.badge && <span className="text-amber-400">({prod.badge})</span>}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Delete "${prod.title}"?`)) {
+                                  deleteProduct(prod._id);
+                                }
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer shrink-0"
+                              title="Delete Product"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
