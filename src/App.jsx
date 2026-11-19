@@ -27,7 +27,6 @@ export function App() {
   useEffect(() => {
     const detectedSubdomain = extractSubdomain();
     if (detectedSubdomain) {
-      loadStore(detectedSubdomain);
       setCurrentView('storefront');
     }
   }, []);

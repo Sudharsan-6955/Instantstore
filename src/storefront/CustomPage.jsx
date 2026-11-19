@@ -89,17 +89,30 @@ export const CustomPage = ({ pageSlug, viewport = 'desktop' }) => {
             {items.map((item, idx) => (
               <div 
                 key={idx}
-                className="p-4 sm:p-5 bg-slate-900/40 border border-slate-800/70 rounded-2xl flex flex-col justify-between"
+                className="bg-slate-900/40 border border-slate-800/70 rounded-2xl flex flex-col justify-between overflow-hidden group hover:border-slate-700 transition-all"
               >
                 <div>
-                  <div 
-                    style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
-                    className="w-8 h-8 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-3"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
+                  {item.imageUrl ? (
+                    <div className="h-44 w-full overflow-hidden bg-slate-950 border-b border-slate-800/70">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="p-4 sm:p-5">
+                    {!item.imageUrl && (
+                      <div 
+                        style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
+                        className="w-8 h-8 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-3"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                    )}
+                    <h4 className="font-bold text-sm mb-1">{item.title}</h4>
+                    <p className="text-xs opacity-70 leading-relaxed">{item.description}</p>
                   </div>
-                  <h4 className="font-bold text-sm mb-1">{item.title}</h4>
-                  <p className="text-xs opacity-70 leading-relaxed">{item.description}</p>
                 </div>
               </div>
             ))}

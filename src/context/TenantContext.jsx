@@ -1,16 +1,22 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
+import { extractSubdomain } from '../utils/domain';
 
 const TenantContext = createContext(null);
 
 export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
-  const [subdomain, setSubdomain] = useState(initialSubdomain);
+  const [subdomain, setSubdomain] = useState(() => {
+    const detected = extractSubdomain();
+    return detected || initialSubdomain;
+  });
   const [tenant, setTenant] = useState(null);
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [hydrationLatencyMs, setHydrationLatencyMs] = useState(0);
+
+  const loadSeqRef = useRef(0);
 
   // Helper to create a new draft template if a requested subdomain does not yet exist in Atlas
   const createDraftTemplate = (cleanSub, customName) => {
@@ -101,28 +107,47 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
 
   // Load Storefront from MongoDB Atlas
   const loadStore = async (targetSub, customName) => {
-    const cleanSub = (targetSub || 'techgear').toLowerCase().trim();
+    const detected = extractSubdomain();
+    const cleanSub = (targetSub || detected || 'techgear').toLowerCase().trim();
+    const currentSeq = ++loadSeqRef.current;
     setIsLoading(true);
     setError(null);
     setSubdomain(cleanSub);
+    // Instantly reset products to prevent stale products from another store lingering
+    setProducts([]);
     try {
       const data = await api.getStorefront(cleanSub);
+      if (currentSeq !== loadSeqRef.current) return;
       if (data && data.tenant) {
         setTenant(data.tenant);
         setProducts(data.products || []);
         setHydrationLatencyMs(data.hydrationLatencyMs || 0);
       } else {
-        // Fallback to draft template for new store creation
-        setTenant(createDraftTemplate(cleanSub, customName));
+        const isPublicSubdomain = Boolean(detected);
+        if (isPublicSubdomain) {
+          setError('STORE_NOT_FOUND');
+          setTenant({ subdomain: cleanSub, notFound: true, isPublished: false });
+        } else {
+          setTenant(createDraftTemplate(cleanSub, customName));
+        }
         setProducts([]);
       }
     } catch (err) {
-      console.warn(`[Tenant Load] '${cleanSub}' not found in Atlas yet. Initializing new store draft template.`);
-      // New store creation mode: provide complete template so Studio is immediately functional
-      setTenant(createDraftTemplate(cleanSub, customName));
+      if (currentSeq !== loadSeqRef.current) return;
+      console.warn(`[Tenant Load] '${cleanSub}' not found in Atlas.`);
+      const isPublicSubdomain = Boolean(detected);
+      if (isPublicSubdomain) {
+        setError('STORE_NOT_FOUND');
+        setTenant({ subdomain: cleanSub, notFound: true, isPublished: false });
+      } else {
+        // New store creation mode inside Studio on app.devtackle.in: provide template
+        setTenant(createDraftTemplate(cleanSub, customName));
+      }
       setProducts([]);
     } finally {
-      setIsLoading(false);
+      if (currentSeq === loadSeqRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -302,6 +327,45 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
     }
   };
 
+  // Delete Individual Product
+  const deleteProduct = async (productId) => {
+    try {
+      setProducts((prev) => prev.filter((p) => p._id !== productId));
+      if (!tenant?.isNewStore && tenant?.subdomain) {
+        try {
+          await api.deleteProduct(tenant.subdomain, productId);
+        } catch (apiErr) {
+          console.warn('API deleteProduct failed, kept in local state:', apiErr);
+        }
+      }
+      return { success: true };
+    } catch (err) {
+      console.error('Delete product error:', err);
+      throw err;
+    }
+  };
+
+  // Clear All Products (e.g. wipe default starter catalog)
+  const clearAllProducts = async () => {
+    try {
+      const toDelete = [...products];
+      setProducts([]);
+      if (!tenant?.isNewStore && tenant?.subdomain) {
+        for (const p of toDelete) {
+          try {
+            await api.deleteProduct(tenant.subdomain, p._id);
+          } catch (e) {
+            // ignore individual failures during bulk delete
+          }
+        }
+      }
+      return { success: true };
+    } catch (err) {
+      console.error('Clear products error:', err);
+      throw err;
+    }
+  };
+
   return (
     <TenantContext.Provider
       value={{
@@ -321,6 +385,8 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
         updateDraftContact,
         saveDraftToCloud,
         addProduct,
+        deleteProduct,
+        clearAllProducts,
         setTenant,
       }}
     >

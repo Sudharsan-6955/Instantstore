@@ -62,6 +62,8 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
     updateDraftContact,
     saveDraftToCloud, 
     addProduct, 
+    deleteProduct,
+    clearAllProducts,
     loadStore,
     isSaving,
     isLoading 
@@ -1305,6 +1307,126 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         recommendedSize="1600x800px landscape"
                         aspectRatio="banner"
                       />
+
+                      {/* Showcase Projects / Items Editor */}
+                      <div className="pt-3 border-t border-slate-700/60 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-bold text-white text-xs">Featured Projects & Showcase Items</h5>
+                            <p className="text-[10px] text-slate-400">Add, edit, or delete custom works & projects</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const pages = [...(tenant.pages || [])];
+                              let curPage = pages.find(p => p.slug === editingPageSlug);
+                              if (curPage) {
+                                if (!curPage.sections || curPage.sections.length === 0) {
+                                  curPage.sections = [{ type: 'story', title: '', items: [] }];
+                                }
+                                if (!curPage.sections[0].items) {
+                                  curPage.sections[0].items = [];
+                                }
+                                curPage.sections[0].items.push({
+                                  title: 'New Creative Project',
+                                  description: 'Description of this project, creative direction, and deliverables.',
+                                  imageUrl: ''
+                                });
+                                updateDraftPages(pages);
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center space-x-1 cursor-pointer transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Add Project</span>
+                          </button>
+                        </div>
+
+                        {/* Projects list */}
+                        <div className="space-y-2.5">
+                          {(() => {
+                            const curPage = tenant.pages?.find(p => p.slug === editingPageSlug);
+                            const items = curPage?.sections?.[0]?.items || [];
+                            if (items.length === 0) {
+                              return (
+                                <div className="p-3.5 text-center border border-dashed border-slate-800 rounded-xl text-slate-500 text-xs">
+                                  No projects in this showcase yet. Click "+ Add Project" above!
+                                </div>
+                              );
+                            }
+                            return items.map((item, itemIdx) => (
+                              <div key={itemIdx} className="p-3 bg-slate-900/90 border border-slate-700/70 rounded-xl space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-bold text-slate-300">Project #{itemIdx + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const pages = [...(tenant.pages || [])];
+                                      let p = pages.find(pg => pg.slug === editingPageSlug);
+                                      if (p?.sections?.[0]?.items) {
+                                        p.sections[0].items.splice(itemIdx, 1);
+                                        updateDraftPages(pages);
+                                      }
+                                    }}
+                                    className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded transition-colors cursor-pointer"
+                                    title="Delete Project"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-slate-400 mb-0.5">Project Title</label>
+                                  <input
+                                    type="text"
+                                    value={item.title || ''}
+                                    placeholder="e.g. Minimalist Identity System"
+                                    onChange={(e) => {
+                                      const pages = [...(tenant.pages || [])];
+                                      let p = pages.find(pg => pg.slug === editingPageSlug);
+                                      if (p?.sections?.[0]?.items?.[itemIdx]) {
+                                        p.sections[0].items[itemIdx].title = e.target.value;
+                                        updateDraftPages(pages);
+                                      }
+                                    }}
+                                    className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-slate-400 mb-0.5">Description</label>
+                                  <textarea
+                                    rows={2}
+                                    value={item.description || ''}
+                                    placeholder="Brief impact, materials, client, or specs..."
+                                    onChange={(e) => {
+                                      const pages = [...(tenant.pages || [])];
+                                      let p = pages.find(pg => pg.slug === editingPageSlug);
+                                      if (p?.sections?.[0]?.items?.[itemIdx]) {
+                                        p.sections[0].items[itemIdx].description = e.target.value;
+                                        updateDraftPages(pages);
+                                      }
+                                    }}
+                                    className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs"
+                                  />
+                                </div>
+                                <CloudinaryUploader
+                                  label="Project Image"
+                                  currentValue={item.imageUrl || ''}
+                                  onUploadSuccess={(url) => {
+                                    const pages = [...(tenant.pages || [])];
+                                    let p = pages.find(pg => pg.slug === editingPageSlug);
+                                    if (p?.sections?.[0]?.items?.[itemIdx]) {
+                                      p.sections[0].items[itemIdx].imageUrl = url;
+                                      updateDraftPages(pages);
+                                    }
+                                  }}
+                                  recommendedSize="800x600px preview"
+                                  aspectRatio="banner"
+                                />
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1319,14 +1441,31 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                     <h4 className="font-bold text-slate-100 uppercase tracking-wider text-[11px]">Product Catalog</h4>
                     <p className="text-[10px] text-slate-400">Scoped strictly to {tenant.subdomain}</p>
                   </div>
-                  <button
-                    onClick={() => setIsAddProductOpen(!isAddProductOpen)}
-                    style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
-                    className="px-3 py-1.5 text-white rounded-xl font-medium flex items-center space-x-1 shadow"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{isAddProductOpen ? 'Close Form' : 'Add Item'}</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    {products?.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Delete all products from this catalog? (You can add custom ones anytime)')) {
+                            clearAllProducts();
+                          }
+                        }}
+                        className="px-2.5 py-1.5 text-xs text-red-400 bg-red-950/40 border border-red-800/60 hover:bg-red-900/50 rounded-xl font-medium flex items-center space-x-1 transition-colors cursor-pointer"
+                        title="Delete all products"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Clear All</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setIsAddProductOpen(!isAddProductOpen)}
+                      style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
+                      className="px-3 py-1.5 text-white rounded-xl font-medium flex items-center space-x-1 shadow text-xs cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{isAddProductOpen ? 'Close Form' : 'Add Item'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Add Product Inline Form with Cloudinary */}
@@ -1421,7 +1560,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                     products?.map((prod) => (
                       <div
                         key={prod._id}
-                        className="p-2.5 bg-slate-800/40 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
+                        className="p-2.5 bg-slate-800/40 border border-slate-800 rounded-xl flex items-center justify-between gap-3 group hover:border-slate-700 transition-colors"
                       >
                         <img
                           src={prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80'}
@@ -1437,6 +1576,18 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                             {prod.badge && <span className="text-amber-400">({prod.badge})</span>}
                           </div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Delete "${prod.title}"?`)) {
+                              deleteProduct(prod._id);
+                            }
+                          }}
+                          className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Delete Product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))
                   )}

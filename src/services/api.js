@@ -141,6 +141,19 @@ export const api = {
     return await res.json();
   },
 
+  // Delete Product from MongoDB Atlas
+  deleteProduct: async (subdomain, productId) => {
+    const res = await fetch(`${API_BASE}/api/products/${subdomain}/${productId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to delete product in Atlas');
+    }
+    return await res.json();
+  },
+
   // Create Customer Order in MongoDB Atlas
   createOrder: async (subdomain, orderData) => {
     const res = await fetch(`${API_BASE}/api/orders/${subdomain}/checkout`, {

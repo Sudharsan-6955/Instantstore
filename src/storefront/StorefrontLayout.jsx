@@ -5,6 +5,7 @@ import { CatalogPage } from './CatalogPage';
 import { AboutPage } from './AboutPage';
 import { ContactPage } from './ContactPage';
 import { CustomPage } from './CustomPage';
+import { StoreNotFound } from './StoreNotFound';
 import { 
   Menu, 
   X, 
@@ -18,15 +19,14 @@ import {
 import { getStorefrontUrl } from '../utils/domain';
 
 export const StorefrontLayout = ({ previewMode = false, previewPage = null, viewport = 'desktop' }) => {
-  const { tenant, products, hydrationLatencyMs, isLoading } = useTenant();
+  const { tenant, products, hydrationLatencyMs, isLoading, error } = useTenant();
   const [activeTab, setActiveTab] = useState(previewPage || 'home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isMobile = viewport === 'mobile';
   const isTablet = viewport === 'tablet';
-  const liveDomainDisplay = tenant?.subdomain ? getStorefrontUrl(tenant.subdomain).replace(/^https?:\/\//, '') : '';
 
-  if (isLoading || !tenant) {
+  if (isLoading) {
     return (
       <div className="min-h-[70vh] bg-slate-950 text-slate-400 flex flex-col items-center justify-center p-6 text-center space-y-3">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
@@ -35,6 +35,13 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
       </div>
     );
   }
+
+  // If store was not found in Atlas or is an unpublished draft being accessed from a public URL
+  if (tenant?.notFound || error === 'STORE_NOT_FOUND' || (!tenant && !isLoading) || (!previewMode && tenant?.isNewStore)) {
+    return <StoreNotFound subdomain={tenant?.subdomain} />;
+  }
+
+  const liveDomainDisplay = tenant?.subdomain ? getStorefrontUrl(tenant.subdomain).replace(/^https?:\/\//, '') : '';
 
   // Sync previewPage if passed from Studio
   const currentPage = previewPage || activeTab;
