@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTenant } from '../context/TenantContext';
-import { Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
 
 export const CustomPage = ({ pageSlug, viewport = 'desktop' }) => {
   const { tenant } = useTenant();
@@ -108,9 +108,27 @@ export const CustomPage = ({ pageSlug, viewport = 'desktop' }) => {
                         </div>
                       )}
                       <h4 className="font-bold text-sm mb-1">{item.title}</h4>
-                      <p className="text-xs opacity-70 leading-relaxed">{item.description}</p>
+                      <p className="text-xs opacity-70 leading-relaxed mb-3">{item.description}</p>
                     </div>
                   </div>
+
+                  {item.linkUrl && (
+                    <div className="p-4 pt-0 border-t border-slate-800/40 mt-2">
+                      <a
+                        href={item.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          backgroundColor: tenant.theme?.primaryColor || '#EC4899',
+                          borderRadius: tenant.theme?.borderRadius || '0.75rem',
+                        }}
+                        className="w-full py-2 px-3 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 hover:opacity-90 transition-opacity shadow cursor-pointer"
+                      >
+                        <span>Visit Project</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

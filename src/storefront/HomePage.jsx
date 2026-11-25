@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTenant } from '../context/TenantContext';
-import { ArrowRight, Star, Sparkles, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import { ArrowRight, Star, Sparkles, Truck, ShieldCheck, RefreshCw, ExternalLink, ShoppingBag } from 'lucide-react';
 
-export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, viewport = 'desktop' }) => {
+export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, onNavigateTab, viewport = 'desktop' }) => {
   const { tenant, products } = useTenant();
+  const { addToCart } = useCart();
 
   const isMobile = viewport === 'mobile';
   const isTablet = viewport === 'tablet';
@@ -92,26 +94,36 @@ export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, viewport = 'd
               {heroSection.subtitle}
             </p>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => {
-                  if (heroSection.ctaLink === '/portfolio' || isPortfolio) {
-                    if (onNavigatePortfolio) onNavigatePortfolio();
-                    else onNavigateCatalog();
-                  } else {
-                    onNavigateCatalog();
-                  }
-                }}
-                style={{
-                  backgroundColor: tenant.theme?.primaryColor || '#3B82F6',
-                  borderRadius: tenant.theme?.borderRadius || '0.75rem',
-                }}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 text-white font-semibold text-xs sm:text-sm shadow-xl hover:opacity-90 transition-all flex items-center space-x-2"
-              >
-                <span>{heroSection.ctaText || (isPortfolio ? 'View Selected Works' : 'Shop Collection')}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            {heroSection.showCta !== false && !heroSection.hideCta && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = heroSection.ctaLink || (isPortfolio ? '/portfolio' : '/catalog');
+                    if (target.startsWith('http')) {
+                      window.open(target, '_blank', 'noopener,noreferrer');
+                      return;
+                    }
+                    const cleanSlug = target.replace(/^\//, '');
+                    if (onNavigateTab) {
+                      onNavigateTab(cleanSlug);
+                    } else if (cleanSlug === 'portfolio' && onNavigatePortfolio) {
+                      onNavigatePortfolio();
+                    } else if (onNavigateCatalog) {
+                      onNavigateCatalog();
+                    }
+                  }}
+                  style={{
+                    backgroundColor: tenant.theme?.primaryColor || '#3B82F6',
+                    borderRadius: tenant.theme?.borderRadius || '0.75rem',
+                  }}
+                  className="px-5 sm:px-6 py-2.5 sm:py-3 text-white font-semibold text-xs sm:text-sm shadow-xl hover:opacity-90 transition-all flex items-center space-x-2 cursor-pointer"
+                >
+                  <span>{heroSection.ctaText || (isPortfolio ? 'View Selected Works' : 'Shop Collection')}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -139,7 +151,104 @@ export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, viewport = 'd
       )}
 
       {/* Featured Products or Portfolio Projects Section */}
-      {featuredProducts.length > 0 ? (
+      {isPortfolio ? (
+        <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
+          <div className="flex items-end justify-between mb-6 sm:mb-8">
+            <div>
+              <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Showcase & Works
+              </h2>
+              <h3 className="text-xl sm:text-2xl font-bold">Featured Projects & Selected Works</h3>
+            </div>
+            {projects.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab ? onNavigateTab('portfolio') : (onNavigatePortfolio ? onNavigatePortfolio() : onNavigateCatalog())}
+                className="text-xs font-semibold hover:underline flex items-center space-x-1"
+                style={{ color: tenant.theme?.primaryColor || '#EC4899' }}
+              >
+                <span>View All ({projects.length})</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {projects.length > 0 ? (
+            <div className={`grid ${productGrid}`}>
+              {projects.map((project, idx) => (
+                <div
+                  key={idx}
+                  style={{ borderRadius: tenant.theme?.borderRadius || '0.75rem' }}
+                  className="group border border-slate-800/60 hover:border-slate-700 overflow-hidden bg-slate-900/30 flex flex-col justify-between transition-all"
+                >
+                  <div>
+                    <div className="h-48 sm:h-56 overflow-hidden relative bg-slate-950">
+                      <img
+                        src={project.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80'}
+                        alt={project.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span 
+                        style={{ backgroundColor: tenant.theme?.primaryColor || '#EC4899' }}
+                        className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider shadow"
+                      >
+                        {project.category || `Project #${idx + 1}`}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 sm:p-4">
+                      <h4 className="font-semibold text-sm mb-1.5 line-clamp-1">
+                        {project.title}
+                      </h4>
+                      <p className="text-xs opacity-70 line-clamp-3 leading-relaxed">
+                        {project.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 sm:p-4 pt-0 flex items-center justify-between border-t border-slate-800/40 mt-2 gap-2">
+                    {project.linkUrl ? (
+                      <a
+                        href={project.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          backgroundColor: tenant.theme?.primaryColor || '#EC4899',
+                          borderRadius: tenant.theme?.borderRadius || '0.75rem',
+                        }}
+                        className="w-full py-2 px-3 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 hover:opacity-90 transition-opacity shadow cursor-pointer"
+                      >
+                        <span>Visit Project</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <span
+                        style={{
+                          color: tenant.theme?.primaryColor || '#EC4899',
+                          borderColor: `${tenant.theme?.primaryColor || '#EC4899'}40`,
+                          borderRadius: tenant.theme?.borderRadius || '0.75rem',
+                        }}
+                        className="px-2.5 py-1 bg-slate-900/60 border text-[11px] font-semibold flex items-center space-x-1 select-none"
+                      >
+                        <Sparkles className="w-3 h-3 shrink-0" />
+                        <span>Showcase Work</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/20 max-w-lg mx-auto">
+              <Sparkles className="w-6 h-6 text-pink-400 mx-auto mb-2" />
+              <h4 className="text-sm font-semibold text-slate-300">No Showcase Projects Added Yet</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Add your projects, designs, and case studies in the Studio "Projects" tab to showcase them here.
+              </p>
+            </div>
+          )}
+        </section>
+      ) : featuredProducts.length > 0 ? (
         <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
           <div className="flex items-end justify-between mb-6 sm:mb-8">
             <div>
@@ -149,8 +258,9 @@ export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, viewport = 'd
               <h3 className="text-xl sm:text-2xl font-bold">Featured Products</h3>
             </div>
             <button
+              type="button"
               onClick={onNavigateCatalog}
-              className="text-xs font-semibold hover:underline flex items-center space-x-1"
+              className="text-xs font-semibold hover:underline flex items-center space-x-1 cursor-pointer"
               style={{ color: tenant.theme?.primaryColor || '#3B82F6' }}
             >
               <span>View All ({products?.length || 0})</span>
@@ -201,7 +311,7 @@ export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, viewport = 'd
                   </div>
                 </div>
 
-                <div className="p-3.5 sm:p-4 pt-0 flex items-center justify-between border-t border-slate-800/40 mt-2">
+                <div className="p-3.5 sm:p-4 pt-0 flex items-center justify-between border-t border-slate-800/40 mt-2 gap-2">
                   <div>
                     <div className="text-base font-bold">
                       ${product.price}
@@ -213,91 +323,45 @@ export const HomePage = ({ onNavigateCatalog, onNavigatePortfolio, viewport = 'd
                     )}
                   </div>
 
-                  <span
-                    style={{
-                      color: tenant.theme?.primaryColor || '#3B82F6',
-                      borderColor: `${tenant.theme?.primaryColor || '#3B82F6'}40`,
-                      borderRadius: tenant.theme?.borderRadius || '0.75rem',
-                    }}
-                    className="px-2.5 py-1 bg-slate-900/60 border text-[11px] font-semibold flex items-center space-x-1 select-none"
-                  >
-                    <Sparkles className="w-3 h-3 shrink-0" />
-                    <span>Showcase Item</span>
-                  </span>
+                  <div className="flex items-center space-x-1.5">
+                    {product.linkUrl && (
+                      <a
+                        href={product.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors"
+                        title="View Live Link"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => addToCart(product)}
+                      style={{
+                        backgroundColor: tenant.theme?.primaryColor || '#3B82F6',
+                        borderRadius: tenant.theme?.borderRadius || '0.75rem',
+                      }}
+                      className="px-3 py-1.5 text-white text-xs font-semibold flex items-center space-x-1 shadow hover:opacity-90 transition-all cursor-pointer"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
       ) : (
-        <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
-          <div className="flex items-end justify-between mb-6 sm:mb-8">
-            <div>
-              <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Showcase & Works
-              </h2>
-              <h3 className="text-xl sm:text-2xl font-bold">Featured Projects & Selected Works</h3>
-            </div>
+        <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16 text-center">
+          <div className="p-12 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20 max-w-lg mx-auto">
+            <ShoppingBag className="w-6 h-6 text-indigo-400 mx-auto mb-2" />
+            <h4 className="text-sm font-semibold text-slate-300">Catalog Empty</h4>
+            <p className="text-xs text-slate-500 mt-1">
+              Add products in InstantStore Studio to display your live store catalog.
+            </p>
           </div>
-
-          {projects.length > 0 ? (
-            <div className={`grid ${productGrid}`}>
-              {projects.map((project, idx) => (
-                <div
-                  key={idx}
-                  style={{ borderRadius: tenant.theme?.borderRadius || '0.75rem' }}
-                  className="group border border-slate-800/60 hover:border-slate-700 overflow-hidden bg-slate-900/30 flex flex-col justify-between transition-all"
-                >
-                  <div>
-                    <div className="h-48 sm:h-56 overflow-hidden relative bg-slate-950">
-                      <img
-                        src={project.imageUrl || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80'}
-                        alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span 
-                        style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
-                        className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider shadow"
-                      >
-                        Project #{idx + 1}
-                      </span>
-                    </div>
-
-                    <div className="p-3.5 sm:p-4">
-                      <h4 className="font-semibold text-sm mb-1.5 line-clamp-1">
-                        {project.title}
-                      </h4>
-                      <p className="text-xs opacity-70 line-clamp-3 leading-relaxed">
-                        {project.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 sm:p-4 pt-0 flex items-center justify-between border-t border-slate-800/40 mt-2">
-                    <span
-                      style={{
-                        color: tenant.theme?.primaryColor || '#3B82F6',
-                        borderColor: `${tenant.theme?.primaryColor || '#3B82F6'}40`,
-                        borderRadius: tenant.theme?.borderRadius || '0.75rem',
-                      }}
-                      className="px-2.5 py-1 bg-slate-900/60 border text-[11px] font-semibold flex items-center space-x-1 select-none"
-                    >
-                      <Sparkles className="w-3 h-3 shrink-0" />
-                      <span>Showcase Work</span>
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-12 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/20 max-w-lg mx-auto">
-              <Sparkles className="w-6 h-6 text-indigo-400 mx-auto mb-2" />
-              <h4 className="text-sm font-semibold text-slate-300">No Showcase Projects Yet</h4>
-              <p className="text-xs text-slate-500 mt-1">
-                Add your works, case studies, and photos in InstantStore Studio to display them here.
-              </p>
-            </div>
-          )}
         </section>
       )}
     </div>

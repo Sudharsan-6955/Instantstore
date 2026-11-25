@@ -62,6 +62,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
     updateDraftPages, 
     updateDraftNavigation,
     updateDraftContact,
+    updateDraftFooter,
     saveDraftToCloud, 
     addProduct, 
     deleteProduct,
@@ -96,6 +97,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
     category: '',
     description: '',
     imageUrl: '',
+    linkUrl: '',
   });
 
   const portfolioPage = tenant?.pages?.find(p => p.slug === 'portfolio');
@@ -134,9 +136,10 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
       category: newProject.category.trim() || 'Creative Work',
       description: newProject.description.trim(),
       imageUrl: newProject.imageUrl.trim() || 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
+      linkUrl: newProject.linkUrl?.trim() || '',
     });
     updateDraftPages(pages);
-    setNewProject({ title: '', category: '', description: '', imageUrl: '' });
+    setNewProject({ title: '', category: '', description: '', imageUrl: '', linkUrl: '' });
     setIsAddProjectOpen(false);
   };
 
@@ -488,6 +491,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
     description: 'High-quality handcrafted item.',
     inventory: 50,
     badge: 'New',
+    linkUrl: '',
     isFeatured: true,
   });
 
@@ -563,6 +567,7 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
         description: 'High-quality handcrafted item.',
         inventory: 50,
         badge: 'New',
+        linkUrl: '',
         isFeatured: true,
       });
     } catch (err) {
@@ -805,6 +810,18 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                   <span>Catalog ({products?.length || 0})</span>
                 </>
               )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('footer')}
+              className={`flex-1 py-3 text-center font-medium border-b-2 flex items-center justify-center space-x-1.5 transition-all ${
+                activeTab === 'footer'
+                  ? 'border-indigo-500 text-indigo-400 bg-indigo-500/5'
+                  : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Layout className="w-3.5 h-3.5" />
+              <span>Footer</span>
             </button>
           </div>
 
@@ -1250,30 +1267,76 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-slate-400 text-xs mb-1">CTA Button Text</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. View Selected Works"
-                            value={homeHero?.ctaText ?? (isPortfolio ? 'View Selected Works' : 'Shop Collection')}
-                            onChange={(e) => updateHomeHero({ ctaText: e.target.value })}
-                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
-                          />
+                      {/* Hero CTA Button Section with Show/Hide Toggle */}
+                      <div className="p-3 bg-slate-950/70 border border-slate-700/80 rounded-xl space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider">
+                            Hero CTA Button
+                          </span>
+                          <label className="flex items-center space-x-1.5 cursor-pointer text-[11px] text-slate-300">
+                            <input
+                              type="checkbox"
+                              checked={homeHero?.showCta !== false && !homeHero?.hideCta}
+                              onChange={(e) => updateHomeHero({ showCta: e.target.checked, hideCta: !e.target.checked })}
+                              className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0"
+                            />
+                            <span>Show CTA Button</span>
+                          </label>
                         </div>
-                        <div>
-                          <label className="block text-slate-400 text-xs mb-1">Button Link Target</label>
-                          <select
-                            value={homeHero?.ctaLink ?? (isPortfolio ? '/portfolio' : '/catalog')}
-                            onChange={(e) => updateHomeHero({ ctaLink: e.target.value })}
-                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
-                          >
-                            <option value="/portfolio">/portfolio (Portfolio)</option>
-                            <option value="/catalog">/catalog (Catalog)</option>
-                            <option value="/about">/about (About)</option>
-                            <option value="/contact">/contact (Contact)</option>
-                          </select>
-                        </div>
+
+                        {(homeHero?.showCta !== false && !homeHero?.hideCta) ? (
+                          <div className="space-y-2 pt-1">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-slate-400 text-[10px] mb-1">Button Text</label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. My Projects"
+                                  value={homeHero?.ctaText ?? (isPortfolio ? 'My Projects' : 'Shop Collection')}
+                                  onChange={(e) => updateHomeHero({ ctaText: e.target.value })}
+                                  className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-slate-400 text-[10px] mb-1">Button Link Target</label>
+                                <select
+                                  value={['/portfolio', '/catalog', '/about', '/contact'].includes(homeHero?.ctaLink) ? homeHero.ctaLink : 'custom'}
+                                  onChange={(e) => {
+                                    if (e.target.value === 'custom') {
+                                      updateHomeHero({ ctaLink: 'https://' });
+                                    } else {
+                                      updateHomeHero({ ctaLink: e.target.value });
+                                    }
+                                  }}
+                                  className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                                >
+                                  <option value="/portfolio">/portfolio (Portfolio)</option>
+                                  <option value="/catalog">/catalog (Catalog / Projects)</option>
+                                  <option value="/about">/about (About)</option>
+                                  <option value="/contact">/contact (Contact)</option>
+                                  <option value="custom">Custom URL / External Link...</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {!['/portfolio', '/catalog', '/about', '/contact'].includes(homeHero?.ctaLink) && (
+                              <div>
+                                <label className="block text-slate-400 text-[10px] mb-1">Custom Link URL</label>
+                                <input
+                                  type="text"
+                                  placeholder="https://... or /services"
+                                  value={homeHero?.ctaLink || ''}
+                                  onChange={(e) => updateHomeHero({ ctaLink: e.target.value })}
+                                  className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-slate-500 italic">
+                            CTA button is hidden on your live storefront. Check "Show CTA Button" to re-enable it.
+                          </p>
+                        )}
                       </div>
 
                       {/* Cloudinary Hero Banner Background Uploader */}
@@ -1843,6 +1906,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                           />
                         </div>
 
+                        <div>
+                          <label className="block text-slate-400 mb-1 text-xs">Live Project Link / Demo URL (Optional)</label>
+                          <input
+                            type="url"
+                            placeholder="e.g. https://github.com/... or https://myproject.com"
+                            value={newProject.linkUrl || ''}
+                            onChange={(e) => setNewProject({ ...newProject, linkUrl: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                          />
+                        </div>
+
                         <button
                           type="submit"
                           style={{ backgroundColor: tenant.theme?.primaryColor || '#EC4899' }}
@@ -1875,6 +1949,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                               <div className="text-[10px] text-slate-400 truncate">
                                 {item.category || 'Creative Work'} &bull; {item.description || 'No description'}
                               </div>
+                              {item.linkUrl && (
+                                <a
+                                  href={item.linkUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-pink-400 hover:underline flex items-center space-x-1 truncate mt-0.5"
+                                >
+                                  <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                                  <span className="truncate">{item.linkUrl}</span>
+                                </a>
+                              )}
                             </div>
                             <button
                               type="button"
@@ -2002,6 +2087,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                           </div>
                         </div>
 
+                        <div>
+                          <label className="block text-slate-400 mb-1 text-xs">Direct Link / External URL (Optional)</label>
+                          <input
+                            type="url"
+                            placeholder="e.g. https://... (live demo, affiliate or purchase link)"
+                            value={newProduct.linkUrl || ''}
+                            onChange={(e) => setNewProduct({ ...newProduct, linkUrl: e.target.value })}
+                            className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                          />
+                        </div>
+
                         <button
                           type="submit"
                           style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
@@ -2037,6 +2133,17 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                                 <span>{prod.category}</span>
                                 {prod.badge && <span className="text-amber-400">({prod.badge})</span>}
                               </div>
+                              {prod.linkUrl && (
+                                <a
+                                  href={prod.linkUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-indigo-400 hover:underline flex items-center space-x-1 truncate mt-0.5"
+                                >
+                                  <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                                  <span className="truncate">{prod.linkUrl}</span>
+                                </a>
+                              )}
                             </div>
                             <button
                               type="button"
@@ -2056,6 +2163,171 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* TAB 4: FOOTER & DIRECT CONTACT CUSTOMIZER */}
+            {activeTab === 'footer' && (
+              <div className="space-y-5 animate-fadeIn">
+                <div className="p-3.5 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-purple-950/40 border border-indigo-500/30 rounded-2xl space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Layout className="w-4 h-4 text-indigo-400" />
+                    <h4 className="font-bold text-white uppercase tracking-wider text-xs">
+                      Footer & Direct Contact Settings
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Configure the bottom footer of your website and direct contact channels. All changes render live in real time.
+                  </p>
+                </div>
+
+                {/* Footer Bio / Description */}
+                <div className="p-3.5 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-3">
+                  <h5 className="font-bold text-xs text-white">Brand Summary / Footer Bio</h5>
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">About / Bio Text</label>
+                    <textarea
+                      rows={3}
+                      placeholder="e.g. Curated architectural showcases, visual design, and creative works."
+                      value={tenant.footer?.description ?? tenant.tagline ?? ''}
+                      onChange={(e) => updateDraftFooter({ description: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs leading-relaxed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Copyright Notice</label>
+                    <input
+                      type="text"
+                      placeholder={`e.g. © ${new Date().getFullYear()} ${tenant.name}. All rights reserved.`}
+                      value={tenant.footer?.copyrightText ?? ''}
+                      onChange={(e) => updateDraftFooter({ copyrightText: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Direct Contact Info */}
+                <div className="p-3.5 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-3">
+                  <h5 className="font-bold text-xs text-white">Direct Contact Information</h5>
+                  
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Support / Business Email</label>
+                    <input
+                      type="email"
+                      placeholder="e.g. contact@mybrand.com"
+                      value={tenant.footer?.contactEmail ?? tenant.contact?.email ?? ''}
+                      onChange={(e) => {
+                        updateDraftFooter({ contactEmail: e.target.value });
+                        updateDraftContact({ email: e.target.value });
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Phone / WhatsApp Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +1 (555) 019-2834"
+                      value={tenant.footer?.contactPhone ?? tenant.contact?.phone ?? ''}
+                      onChange={(e) => {
+                        updateDraftFooter({ contactPhone: e.target.value });
+                        updateDraftContact({ phone: e.target.value });
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Headquarters / Studio Location</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 100 Innovation Boulevard, Silicon Valley, CA"
+                      value={tenant.footer?.contactAddress ?? tenant.contact?.address ?? ''}
+                      onChange={(e) => {
+                        updateDraftFooter({ contactAddress: e.target.value });
+                        updateDraftContact({ address: e.target.value });
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Social Profiles */}
+                <div className="p-3.5 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-3">
+                  <h5 className="font-bold text-xs text-white">Social Profiles & Links</h5>
+                  <p className="text-[10px] text-slate-400">
+                    Enter your profile URLs. Icons will appear automatically in the footer and contact hub.
+                  </p>
+
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-slate-400 text-[10px] mb-1">GitHub URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://github.com/yourhandle"
+                        value={tenant.footer?.socials?.github ?? ''}
+                        onChange={(e) => updateDraftFooter({
+                          socials: { ...(tenant.footer?.socials || {}), github: e.target.value }
+                        })}
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[10px] mb-1">LinkedIn URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://linkedin.com/in/yourhandle"
+                        value={tenant.footer?.socials?.linkedin ?? ''}
+                        onChange={(e) => updateDraftFooter({
+                          socials: { ...(tenant.footer?.socials || {}), linkedin: e.target.value }
+                        })}
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[10px] mb-1">Twitter / X URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://x.com/yourhandle"
+                        value={tenant.footer?.socials?.twitter ?? ''}
+                        onChange={(e) => updateDraftFooter({
+                          socials: { ...(tenant.footer?.socials || {}), twitter: e.target.value }
+                        })}
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[10px] mb-1">Instagram URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://instagram.com/yourhandle"
+                        value={tenant.footer?.socials?.instagram ?? ''}
+                        onChange={(e) => updateDraftFooter({
+                          socials: { ...(tenant.footer?.socials || {}), instagram: e.target.value }
+                        })}
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[10px] mb-1">Website / Portfolio URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://yourwebsite.com"
+                        value={tenant.footer?.socials?.website ?? ''}
+                        onChange={(e) => updateDraftFooter({
+                          socials: { ...(tenant.footer?.socials || {}), website: e.target.value }
+                        })}
+                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

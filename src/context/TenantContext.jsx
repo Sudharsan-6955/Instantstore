@@ -236,6 +236,7 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
             description: p.description,
             inventory: p.inventory,
             badge: p.badge,
+            linkUrl: p.linkUrl || '',
             isFeatured: p.isFeatured
           }))
         });
@@ -250,6 +251,7 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
           navigation: tenant.navigation,
           pages: tenant.pages,
           contact: tenant.contact,
+          footer: tenant.footer,
           ownerEmail: ownerEmail,
           ownerClerkId: ownerClerkId,
         });
@@ -267,6 +269,7 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
               description: draftProd.description,
               inventory: draftProd.inventory,
               badge: draftProd.badge,
+              linkUrl: draftProd.linkUrl || '',
               isFeatured: draftProd.isFeatured
             });
           } catch (pErr) {
@@ -299,6 +302,7 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
         images: productData.images && productData.images.length ? productData.images : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80'],
         inventory: Number(productData.inventory) || 50,
         badge: productData.badge || '',
+        linkUrl: productData.linkUrl || '',
         isFeatured: Boolean(productData.isFeatured !== undefined ? productData.isFeatured : true),
         createdAt: new Date().toISOString()
       };
@@ -366,6 +370,17 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
     }
   };
 
+  // Update Draft Footer Details (Bio, Socials, Copyright, Direct Contact)
+  const updateDraftFooter = (footerUpdates) => {
+    setTenant((prev) => ({
+      ...prev,
+      footer: {
+        ...(prev?.footer || {}),
+        ...footerUpdates,
+      },
+    }));
+  };
+
   return (
     <TenantContext.Provider
       value={{
@@ -383,6 +398,7 @@ export const TenantProvider = ({ initialSubdomain = 'techgear', children }) => {
         updateDraftPages,
         updateDraftNavigation,
         updateDraftContact,
+        updateDraftFooter,
         saveDraftToCloud,
         addProduct,
         deleteProduct,

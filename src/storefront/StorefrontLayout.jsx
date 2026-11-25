@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useTenant } from '../context/TenantContext';
+import { useCart } from '../context/CartContext';
 import { HomePage } from './HomePage';
 import { CatalogPage } from './CatalogPage';
 import { AboutPage } from './AboutPage';
 import { ContactPage } from './ContactPage';
 import { CustomPage } from './CustomPage';
 import { StoreNotFound } from './StoreNotFound';
+import { CartDrawer } from './CartDrawer';
+import { CheckoutModal } from './CheckoutModal';
 import { 
   Menu, 
   X, 
@@ -14,17 +17,30 @@ import {
   Phone, 
   Mail, 
   MapPin, 
-  Loader2 
+  Loader2,
+  ShoppingBag,
+  Globe
 } from 'lucide-react';
+import { 
+  GitHubIcon, 
+  LinkedInIcon, 
+  TwitterIcon, 
+  InstagramIcon 
+} from '../components/SocialIcons';
 import { getStorefrontUrl } from '../utils/domain';
 
 export const StorefrontLayout = ({ previewMode = false, previewPage = null, viewport = 'desktop' }) => {
   const { tenant, products, hydrationLatencyMs, isLoading, error } = useTenant();
+  const { cartCount, setIsCartOpen } = useCart();
   const [activeTab, setActiveTab] = useState(previewPage || 'home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isMobile = viewport === 'mobile';
   const isTablet = viewport === 'tablet';
+
+  const isPortfolio = tenant?.archetype === 'portfolio' || 
+    tenant?.theme?.archetype === 'portfolio' ||
+    Boolean(tenant?.pages?.some(p => p.slug === 'portfolio') && tenant?.navigation?.find(n => n.path === '/portfolio')?.isVisible !== false);
 
   if (isLoading) {
     return (
@@ -129,8 +145,30 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
             </div>
           )}
 
-          {/* Right Actions: Telemetry badge & Mobile menu trigger */}
+          {/* Right Actions: Cart, Telemetry badge & Mobile menu trigger */}
           <div className="flex items-center space-x-2 shrink-0">
+            {/* Shopping Cart Button (Storefront / E-commerce mode) */}
+            {!isPortfolio && (
+              <button
+                type="button"
+                onClick={() => setIsCartOpen(true)}
+                className={`relative p-2 rounded-lg transition-colors flex items-center space-x-1.5 cursor-pointer ${
+                  isDark ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+                }`}
+                title="View Shopping Cart"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                {cartCount > 0 && (
+                  <span
+                    style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
+                    className="px-1.5 py-0.2 rounded-full text-[10px] font-bold text-white leading-tight animate-pulse"
+                  >
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {!isMobile && (
               <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono ${
                 isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
@@ -180,7 +218,12 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
       {/* Dynamic Page Views */}
       <main className="min-h-[70vh]">
         {currentPage === 'home' && (
-          <HomePage onNavigateCatalog={() => setActiveTab('catalog')} viewport={viewport} />
+          <HomePage 
+            onNavigateCatalog={() => setActiveTab('catalog')} 
+            onNavigatePortfolio={() => setActiveTab('portfolio')}
+            onNavigateTab={(tab) => setActiveTab(tab)} 
+            viewport={viewport} 
+          />
         )}
         {currentPage === 'catalog' && (
           <CatalogPage viewport={viewport} />
@@ -196,31 +239,76 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
         )}
       </main>
 
-      {/* Store Footer */}
-      <footer className={`py-10 border-t mt-16 transition-colors ${
+      {/* Store Footer - Fully Customizable */}
+      <footer className={`py-12 border-t mt-16 transition-colors ${
         isDark ? 'bg-slate-900/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
       }`}>
         <div className={`max-w-6xl mx-auto px-4 grid gap-8 text-xs ${
           isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-4'
         }`}>
+          {/* Brand & Bio column */}
           <div className={isMobile ? '' : 'md:col-span-2'}>
-            <h4 className="font-bold text-sm mb-2 text-white">{tenant.name}</h4>
-            <p className="max-w-sm leading-relaxed mb-4 opacity-80">{tenant.tagline}</p>
-            <div className="flex items-center space-x-2 text-[11px] text-slate-500">
-              <span>© {new Date().getFullYear()} {tenant.name}. All rights reserved.</span>
+            <h4 className="font-bold text-base mb-2 text-white">{tenant.name}</h4>
+            <p className="max-w-sm leading-relaxed mb-4 opacity-80 whitespace-pre-line">
+              {tenant.footer?.description || tenant.tagline || 'Crafted with precision via zero-build cloud architecture.'}
+            </p>
+
+            {/* Social Icons */}
+            {tenant.footer?.socials && Object.values(tenant.footer.socials).some(Boolean) && (
+              <div className="flex items-center space-x-2.5 mb-4">
+                {tenant.footer.socials.github && (
+                  <a href={tenant.footer.socials.github} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="GitHub">
+                    <GitHubIcon className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {tenant.footer.socials.linkedin && (
+                  <a href={tenant.footer.socials.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="LinkedIn">
+                    <LinkedInIcon className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {tenant.footer.socials.twitter && (
+                  <a href={tenant.footer.socials.twitter} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="Twitter / X">
+                    <TwitterIcon className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {tenant.footer.socials.instagram && (
+                  <a href={tenant.footer.socials.instagram} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="Instagram">
+                    <InstagramIcon className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {tenant.footer.socials.website && (
+                  <a href={tenant.footer.socials.website} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="Website / Portfolio">
+                    <Globe className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+              <span>{tenant.footer?.copyrightText || `© ${new Date().getFullYear()} ${tenant.name}. All rights reserved.`}</span>
               <span>•</span>
               <span className="font-mono">{liveDomainDisplay}</span>
             </div>
           </div>
 
+          {/* Explore Links */}
           <div>
-            <h5 className="font-semibold text-white mb-2">Explore</h5>
+            <h5 className="font-semibold text-white mb-2 uppercase tracking-wider text-[11px]">Explore</h5>
             <ul className="space-y-1.5">
-              {tenant.navigation?.filter(nav => nav.isVisible).map((nav) => {
+              {(
+                tenant.navigation?.filter(nav => nav.isVisible !== false)?.length
+                  ? tenant.navigation.filter(nav => nav.isVisible !== false)
+                  : [
+                      { id: 'nav-home', label: 'Home', path: '/' },
+                      { id: isPortfolio ? 'nav-portfolio' : 'nav-catalog', label: isPortfolio ? 'Projects' : 'Catalog', path: isPortfolio ? '/portfolio' : '/catalog' },
+                      { id: 'nav-about', label: 'About', path: '/about' },
+                      { id: 'nav-contact', label: 'Contact', path: '/contact' }
+                    ]
+              ).map((nav) => {
                 const slug = nav.path === '/' ? 'home' : nav.path.replace('/', '');
                 return (
                   <li key={nav.id}>
-                    <button onClick={() => setActiveTab(slug)} className="hover:underline capitalize">
+                    <button onClick={() => setActiveTab(slug)} className="hover:underline capitalize text-slate-400 hover:text-white">
                       {nav.label}
                     </button>
                   </li>
@@ -229,25 +317,47 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
             </ul>
           </div>
 
+          {/* Direct Contact column */}
           <div>
-            <h5 className="font-semibold text-white mb-2">Contact</h5>
-            <ul className="space-y-1.5">
-              <li className="flex items-center space-x-1.5 truncate">
-                <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                <span className="truncate">{tenant.contact?.email || 'support@brand.com'}</span>
-              </li>
-              <li className="flex items-center space-x-1.5">
-                <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                <span>{tenant.contact?.phone || '+1 555-0199'}</span>
-              </li>
-              <li className="flex items-center space-x-1.5 truncate">
-                <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                <span className="truncate">{tenant.contact?.address || 'Silicon Valley, CA'}</span>
-              </li>
+            <h5 className="font-semibold text-white mb-2 uppercase tracking-wider text-[11px]">Direct Contact</h5>
+            <ul className="space-y-2">
+              {(tenant.footer?.contactEmail || tenant.contact?.email) && (
+                <li className="flex items-center space-x-2 truncate">
+                  <Mail className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <a href={`mailto:${tenant.footer?.contactEmail || tenant.contact?.email}`} className="truncate hover:underline text-slate-300 hover:text-white">
+                    {tenant.footer?.contactEmail || tenant.contact?.email}
+                  </a>
+                </li>
+              )}
+              {(tenant.footer?.contactPhone || tenant.contact?.phone) && (
+                <li className="flex items-center space-x-2">
+                  <Phone className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <a href={`tel:${tenant.footer?.contactPhone || tenant.contact?.phone}`} className="hover:underline text-slate-300 hover:text-white">
+                    {tenant.footer?.contactPhone || tenant.contact?.phone}
+                  </a>
+                </li>
+              )}
+              {(tenant.footer?.contactAddress || tenant.contact?.address) && (
+                <li className="flex items-start space-x-2">
+                  <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tenant.footer?.contactAddress || tenant.contact?.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline text-slate-300 hover:text-white leading-snug"
+                  >
+                    {tenant.footer?.contactAddress || tenant.contact?.address}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>
       </footer>
+
+      {/* Cart Drawer & Checkout Modal */}
+      <CartDrawer />
+      <CheckoutModal />
     </div>
   );
 };
