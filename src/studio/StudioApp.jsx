@@ -36,7 +36,9 @@ import {
   EyeOff,
   Briefcase,
   Layout,
-  X
+  X,
+  Lock,
+  ShieldAlert
 } from 'lucide-react';
 
 const PRESET_COLORS = [
@@ -457,18 +459,23 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
     setTimeout(() => setSaveSuccessMessage(''), 3000);
   };
 
-  // Fetch available stores from Atlas for quick switching
+  // Fetch only stores owned by the authenticated merchant for quick switching
   useEffect(() => {
-    const fetchStores = async () => {
+    const fetchUserStores = async () => {
+      const userIdentifier = user?.clerkId || user?.email;
+      if (!userIdentifier) {
+        setAvailableStores([]);
+        return;
+      }
       try {
-        const res = await api.getTenants();
+        const res = await api.getUserStores(userIdentifier);
         if (res.tenants) setAvailableStores(res.tenants);
       } catch (err) {
-        console.error('Failed to load stores for studio selector:', err);
+        console.error('Failed to load user stores for studio selector:', err);
       }
     };
-    fetchStores();
-  }, []);
+    fetchUserStores();
+  }, [user?.clerkId, user?.email]);
 
   // New Product Modal state
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -494,7 +501,22 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
     );
   }
 
+  const userEmail = (user?.email || '').toLowerCase().trim();
+  const userClerkId = (user?.clerkId || '').trim();
+
+  // Strict Tenant Ownership Check:
+  // User is owner if it's a new draft or credentials match the store's owner
+  const isOwner = Boolean(
+    tenant?.isNewStore ||
+    (tenant?.ownerClerkId && userClerkId && tenant.ownerClerkId === userClerkId) ||
+    (tenant?.ownerEmail && userEmail && tenant.ownerEmail.toLowerCase().trim() === userEmail)
+  );
+
   const handleSaveToAtlas = async () => {
+    if (!isOwner && !tenant?.isNewStore) {
+      alert(`Cross-Tenant Security: You do not have permission to modify '${tenant.subdomain}'. Only the verified owner (${tenant.ownerEmail || 'registered owner'}) can save changes.`);
+      return;
+    }
     try {
       await saveDraftToCloud();
       setSaveSuccessMessage('Draft saved to MongoDB Atlas!');
@@ -506,6 +528,10 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
   };
 
   const handleLaunchStore = async () => {
+    if (!isOwner && !tenant?.isNewStore) {
+      alert(`Cross-Tenant Security: You do not have permission to launch '${tenant.subdomain}'. Only the verified owner can publish updates.`);
+      return;
+    }
     try {
       await saveDraftToCloud();
       confetti({
@@ -671,9 +697,13 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
 
           <button
             onClick={handleSaveToAtlas}
-            disabled={isSaving}
-            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium transition-colors flex items-center space-x-1 sm:space-x-1.5 shrink-0"
-            title="Save Draft"
+            disabled={isSaving || (!isOwner && !tenant?.isNewStore)}
+            className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl font-medium transition-colors flex items-center space-x-1 sm:space-x-1.5 shrink-0 ${
+              !isOwner && !tenant?.isNewStore
+                ? 'bg-slate-800/40 text-slate-500 cursor-not-allowed'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+            }`}
+            title={!isOwner && !tenant?.isNewStore ? "Read-Only: You do not own this website" : "Save Draft"}
           >
             <Save className="w-3.5 h-3.5 shrink-0" />
             <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save Draft'}</span>
@@ -681,19 +711,55 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
 
           <button
             onClick={handleLaunchStore}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center space-x-1 sm:space-x-1.5 shrink-0"
-            title="Launch Store (<50ms)"
+            disabled={!isOwner && !tenant?.isNewStore}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 text-white font-bold rounded-xl transition-all shadow-lg flex items-center space-x-1 sm:space-x-1.5 shrink-0 ${
+              !isOwner && !tenant?.isNewStore
+                ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed shadow-none'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-emerald-500/20'
+            }`}
+            title={!isOwner && !tenant?.isNewStore ? "Read-Only: You do not own this website" : "Launch Store (<50ms)"}
           >
-            <Rocket className="w-3.5 h-3.5 shrink-0" />
-            <span>Launch<span className="hidden sm:inline"> Store (&lt;50ms)</span></span>
+            {!isOwner && !tenant?.isNewStore ? (
+              <>
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span>Read-Only</span>
+              </>
+            ) : (
+              <>
+                <Rocket className="w-3.5 h-3.5 shrink-0" />
+                <span>Launch<span className="hidden sm:inline"> Store (&lt;50ms)</span></span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
+      {/* Read-Only Warning Banner for Non-Owners */}
+      {!isOwner && !tenant?.isNewStore && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 sm:px-4 py-2 flex items-center justify-between text-amber-300 text-xs shrink-0">
+          <div className="flex items-center space-x-2 min-w-0">
+            <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="truncate">
+              <strong>Read-Only Mode:</strong> This website is owned by another merchant ({tenant.ownerEmail || 'registered merchant'}). You cannot edit or overwrite this website.
+            </span>
+          </div>
+          {onOpenProfile && (
+            <button
+              onClick={onOpenProfile}
+              className="ml-2 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 rounded-lg text-[11px] font-medium transition-colors shrink-0"
+            >
+              My Websites
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Split-Screen Workspace */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Merchant Studio Controls (420px wide) */}
-        <div className="w-full md:w-[420px] bg-slate-900/90 border-r border-slate-800 flex flex-col shrink-0">
+        <div className={`w-full md:w-[420px] bg-slate-900/90 border-r border-slate-800 flex flex-col shrink-0 ${
+          !isOwner && !tenant?.isNewStore ? 'pointer-events-none opacity-60 select-none' : ''
+        }`}>
           {/* Navigation Tabs - Focused purely on Frontend Showcase */}
           <div className="flex border-b border-slate-800 bg-slate-900 shrink-0">
             <button
