@@ -77,19 +77,34 @@ export const AuthProvider = ({ children }) => {
   // Google OAuth Login Trigger
   const loginWithGoogle = async () => {
     try {
+      const redirectTarget = typeof window !== 'undefined' ? window.location.origin : 'https://app.devtackle.in';
       if (isSignInLoaded && signIn) {
         await signIn.authenticateWithRedirect({
           strategy: 'oauth_google',
-          redirectUrl: window.location.origin,
-          redirectUrlComplete: window.location.origin,
+          redirectUrl: redirectTarget,
+          redirectUrlComplete: redirectTarget,
+          continueSignUp: true,
         });
       } else if (openSignIn) {
-        openSignIn();
+        openSignIn({
+          fallbackRedirectUrl: redirectTarget,
+          forceRedirectUrl: redirectTarget,
+          signUpFallbackRedirectUrl: redirectTarget,
+          signUpForceRedirectUrl: redirectTarget,
+        });
       }
     } catch (err) {
       console.error('[Google OAuth Error]:', err);
       // Fallback: open Clerk modal
-      if (openSignIn) openSignIn();
+      if (openSignIn) {
+        const redirectTarget = typeof window !== 'undefined' ? window.location.origin : 'https://app.devtackle.in';
+        openSignIn({
+          fallbackRedirectUrl: redirectTarget,
+          forceRedirectUrl: redirectTarget,
+          signUpFallbackRedirectUrl: redirectTarget,
+          signUpForceRedirectUrl: redirectTarget,
+        });
+      }
     }
   };
 

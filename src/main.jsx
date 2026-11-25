@@ -24,8 +24,17 @@ function Root() {
   );
 
   if (isClerkConfigured) {
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://app.devtackle.in';
+
     return (
-      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} afterSignOutUrl="/">
+      <ClerkProvider
+        publishableKey={CLERK_PUBLISHABLE_KEY}
+        afterSignOutUrl="/"
+        signInFallbackRedirectUrl={currentOrigin}
+        signUpFallbackRedirectUrl={currentOrigin}
+        signInForceRedirectUrl={currentOrigin}
+        signUpForceRedirectUrl={currentOrigin}
+      >
         {content}
       </ClerkProvider>
     );
