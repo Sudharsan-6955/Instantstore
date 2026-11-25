@@ -548,21 +548,21 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
   return (
     <div className="min-h-[calc(100vh-3rem)] flex flex-col bg-slate-950 overflow-hidden text-xs text-slate-200">
       {/* Studio Top Control Ribbon */}
-      <div className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center space-x-3">
+      <div className="h-14 bg-slate-900 border-b border-slate-800 px-2 sm:px-4 flex items-center justify-between shrink-0 w-full max-w-full gap-1 sm:gap-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0">
           {/* Store Switcher Dropdown */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
             <div 
               style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow shrink-0"
             >
               {tenant.name?.[0] || 'S'}
             </div>
             
-            <div className="relative group">
-              <button className="flex items-center space-x-1.5 hover:text-white transition-colors">
-                <span className="font-bold text-white text-sm">{tenant.name}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <div className="relative group min-w-0">
+              <button className="flex items-center space-x-1 sm:space-x-1.5 hover:text-white transition-colors min-w-0">
+                <span className="font-bold text-white text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[180px] block">{tenant.name}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
 
               {availableStores.length > 0 && (
@@ -583,13 +583,13 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
             </div>
           </div>
 
-          <span className="hidden sm:inline-flex px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-full text-[10px] font-mono">
+          <span className="hidden sm:inline-flex px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-full text-[10px] font-mono shrink-0">
             {tenant.isNewStore ? 'NEW_DRAFT_READY' : 'ATLAS_SYNCED'}
           </span>
         </div>
 
         {/* Viewport & Preview Page Selectors */}
-        <div className="hidden md:flex items-center space-x-2">
+        <div className="hidden md:flex items-center space-x-2 shrink-0">
           {/* Page Preview Switcher */}
           <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
             {tenant.pages?.map((p) => {
@@ -650,10 +650,10 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
         </div>
 
         {/* Action Buttons: Save & Launch */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           {saveSuccessMessage && (
-            <span className="text-emerald-400 font-medium text-xs flex items-center space-x-1 animate-fadeIn">
-              <Check className="w-3.5 h-3.5" />
+            <span className="text-emerald-400 font-medium text-[10px] sm:text-xs hidden sm:flex items-center space-x-1 animate-fadeIn">
+              <Check className="w-3.5 h-3.5 shrink-0" />
               <span>{saveSuccessMessage}</span>
             </span>
           )}
@@ -661,29 +661,31 @@ export const StudioApp = ({ onNavigateToStorefront, onOpenProfile }) => {
           {onOpenProfile && (
             <button
               onClick={onOpenProfile}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium transition-colors flex items-center space-x-1.5 cursor-pointer"
+              className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium transition-colors flex items-center space-x-1 sm:space-x-1.5 cursor-pointer shrink-0"
               title="View all your launched stores & profile"
             >
-              <Store className="w-3.5 h-3.5 text-indigo-400" />
-              <span>My Websites</span>
+              <Store className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <span className="hidden sm:inline">My Websites</span>
             </button>
           )}
 
           <button
             onClick={handleSaveToAtlas}
             disabled={isSaving}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium transition-colors flex items-center space-x-1.5"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium transition-colors flex items-center space-x-1 sm:space-x-1.5 shrink-0"
+            title="Save Draft"
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
+            <Save className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save Draft'}</span>
           </button>
 
           <button
             onClick={handleLaunchStore}
-            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center space-x-1.5"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center space-x-1 sm:space-x-1.5 shrink-0"
+            title="Launch Store (<50ms)"
           >
-            <Rocket className="w-3.5 h-3.5" />
-            <span>Launch Store (&lt;50ms)</span>
+            <Rocket className="w-3.5 h-3.5 shrink-0" />
+            <span>Launch<span className="hidden sm:inline"> Store (&lt;50ms)</span></span>
           </button>
         </div>
       </div>

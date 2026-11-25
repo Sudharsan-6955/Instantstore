@@ -60,7 +60,7 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
   return (
     <div
       style={themeStyles}
-      className={`min-h-screen transition-colors duration-200 ${
+      className={`min-h-screen w-full max-w-full overflow-x-hidden transition-colors duration-200 ${
         isDark ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'
       }`}
     >
@@ -68,24 +68,24 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
       {tenant.brand?.announcement && (
         <div 
           style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
-          className="py-1.5 px-4 text-center text-xs font-medium text-white tracking-wide truncate"
+          className="py-1.5 px-4 text-center text-xs font-medium text-white tracking-wide truncate w-full max-w-full overflow-hidden"
         >
           {tenant.brand.announcement}
         </div>
       )}
 
       {/* Store Navigation Bar */}
-      <nav className={`sticky top-0 z-30 border-b backdrop-blur-md transition-colors ${
+      <nav className={`sticky top-0 z-30 w-full max-w-full border-b backdrop-blur-md transition-colors ${
         isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-200'
       }`}>
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-2 w-full max-w-full">
           {/* Logo / Store Name */}
           <div 
             onClick={() => setActiveTab('home')}
-            className="flex items-center space-x-2 cursor-pointer select-none min-w-0"
+            className="flex items-center space-x-2 cursor-pointer select-none min-w-0 max-w-[calc(100%-56px)] sm:max-w-md"
           >
             {tenant.brand?.logoUrl ? (
-              <img src={tenant.brand.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain max-w-[100px] shrink-0" />
+              <img src={tenant.brand.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain max-w-[80px] sm:max-w-[100px] shrink-0" />
             ) : (
               <div 
                 style={{ backgroundColor: tenant.theme?.primaryColor || '#3B82F6' }}
@@ -94,13 +94,13 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
                 {tenant.name?.[0] || 'S'}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 overflow-hidden">
               <span className={`font-extrabold tracking-tight truncate block ${
-                isMobile ? 'text-xs max-w-[130px]' : 'text-base'
+                isMobile ? 'text-xs max-w-[140px]' : 'text-sm sm:text-base max-w-full'
               }`}>
                 {tenant.name}
               </span>
-              <span className="block text-[9px] sm:text-[10px] text-slate-400 font-mono -mt-1 truncate">
+              <span className="block text-[9px] sm:text-[10px] text-slate-400 font-mono -mt-0.5 truncate max-w-full">
                 {liveDomainDisplay}
               </span>
             </div>
@@ -108,7 +108,7 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
 
           {/* Desktop Nav Links (Hidden in mobile mode) */}
           {!isMobile && (
-            <div className="hidden md:flex items-center space-x-1">
+            <div className="hidden md:flex items-center space-x-1 shrink-0">
               {tenant.navigation?.filter(nav => nav.isVisible).map((nav) => {
                 const slug = nav.path === '/' ? 'home' : nav.path.replace('/', '');
                 const isActive = currentPage === slug;
@@ -140,20 +140,19 @@ export const StorefrontLayout = ({ previewMode = false, previewPage = null, view
             )}
 
             {/* Mobile menu trigger */}
-            {(isMobile || !isMobile) && (
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className={`${isMobile ? 'block' : 'md:hidden'} p-1.5 rounded-lg text-slate-400 hover:text-white`}
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            )}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className={`${isMobile ? 'block' : 'md:hidden'} p-2 rounded-lg text-slate-400 hover:text-white shrink-0`}
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
         {/* Mobile Dropdown Nav */}
         {mobileMenuOpen && (
-          <div className={`px-4 py-2 border-t space-y-1 animate-fadeIn ${
+          <div className={`px-4 py-2 border-t space-y-1 animate-fadeIn w-full max-w-full ${
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
           }`}>
             {tenant.navigation?.filter(nav => nav.isVisible).map((nav) => {

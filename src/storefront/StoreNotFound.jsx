@@ -11,15 +11,15 @@ export const StoreNotFound = ({ subdomain }) => {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-to-b from-indigo-600/15 via-rose-500/10 to-transparent blur-3xl pointer-events-none" />
 
       {/* Mini Brand Header */}
-      <header className="relative z-10 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+      <header className="relative z-10 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between w-full max-w-full overflow-hidden">
         <a 
           href={basePlatformUrl}
-          className="flex items-center space-x-2.5 text-white font-extrabold tracking-tight hover:opacity-90 transition-opacity"
+          className="flex items-center space-x-2 sm:space-x-2.5 text-white font-extrabold tracking-tight hover:opacity-90 transition-opacity min-w-0"
         >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0">
             <Store className="w-4 h-4" />
           </div>
-          <span className="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
+          <span className="text-sm sm:text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400 truncate">
             InstantStore
           </span>
         </a>

@@ -11,9 +11,11 @@
   --tenant-font-body: 'Inter', sans-serif;
 }
 
-/* Smooth scrolling */
-html {
+/* Smooth scrolling & overflow protection */
+html, body {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* Custom subtle scrollbars */

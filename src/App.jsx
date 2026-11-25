@@ -53,7 +53,7 @@ export function App() {
   const detectedSubdomain = extractSubdomain();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* Top Persistent Switcher Bar (Hidden on launched storefronts for a 100% pure merchant experience) */}
       {!detectedSubdomain && currentView !== 'storefront' && (
         <TopSwitcher
